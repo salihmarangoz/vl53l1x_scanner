@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+    <node name="$(anon rviz)" pkg="rviz" type="rviz" args="-d $(find vl53l1x_scanner)/rviz/rviz.rviz"/>
+</launch>

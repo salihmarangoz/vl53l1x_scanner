@@ -18,6 +18,7 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 - 2D and 3D scanning mode
 - (TODO) Laser parameters adaptive mode
 - Resets stepper motor position when the driver is stopped
+- (TODO) Bag files
 
 
 
@@ -97,7 +98,16 @@ IF YOU WANT TO CALIBRATE, CONNECT TO THE DEVICE WITH SERIAL MONITOR OF ARDUINO S
 
 ```bash
 $ source ~/catkin_ws/devel/setup.bash
-$ roslaunch vl53l1x_scanner start_2d.launch # or start_3d.launch
+
+# TO START THE DRIVER SELECT ONE:
+$ roslaunch vl53l1x_scanner start_2d.launch
+$ roslaunch vl53l1x_scanner start_3d.launch
+
+# OR;
+
+# TO INVESTIGATE PRE-RECORDED BAGS SELECT ONE:
+$ roslaunch vl53l1x_scanner bag_2d.launch
+$ roslaunch vl53l1x_scanner bag_3d.launch
 ```
 
 - Run RViz:
