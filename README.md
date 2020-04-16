@@ -124,6 +124,20 @@ $ roslaunch vl53l1x_scanner rviz.launch
 - Set stepper motor phase 1 instead of 2, because torque was enough.
 - (TODO) 28BYJ-48 steps per revolution is 2048 instead of 2038.
 
+- Math calculation for measurement to pointcloud conversion:
+
+$$
+\begin{pmatrix}
+x\\
+y\\
+z
+\end{pmatrix} = \begin{pmatrix}
+d_{laser} * cos(\theta_{vertical})  cos(\theta_{horizontal}) \\
+d_{laser} * cos(\theta_{vertical})  sin(\theta_{horizontal})\\
+d_{laser} * sin(\theta_{vertical})
+\end{pmatrix}
+$$
+
 
 
 ## 6. References
