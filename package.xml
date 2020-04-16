@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>vl53l1x_scanner</name>
+  <version>0.0.0</version>
+  <description>VL53L1X Servo Lidar Scanner</description>
+
+  <author email="salih285@gmail.com">Salih Marangoz</author>
+
+  <maintainer email="salih285@gmail.com">Salih Marangoz</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>serial</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <run_depend>serial</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+
+</package>
