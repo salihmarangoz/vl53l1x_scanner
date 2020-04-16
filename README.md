@@ -126,17 +126,7 @@ $ roslaunch vl53l1x_scanner rviz.launch
 
 - Math calculation for measurement to pointcloud conversion:
 
-$$
-\begin{pmatrix}
-x\\
-y\\
-z
-\end{pmatrix} = \begin{pmatrix}
-d_{laser} * cos(\theta_{vertical})  cos(\theta_{horizontal}) \\
-d_{laser} * cos(\theta_{vertical})  sin(\theta_{horizontal})\\
-d_{laser} * sin(\theta_{vertical})
-\end{pmatrix}
-$$
+![pointcloud_calculation](img/pointcloud_calculation.png)
 
 
 
