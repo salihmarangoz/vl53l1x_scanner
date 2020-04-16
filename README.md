@@ -34,19 +34,21 @@ Materials should be placed on to the breadboard and connections should be made a
 - Arduino UNO
 - Breadboard & Jumper Cables
 - Hot glue & Adhesive Tape
-- PC and USB Cable for Arduino (Will be used in the next section)
+- PC and USB Cable for Arduino (Will be used in `Installing the Software` section)
 
 **Connection Diagram:**
 
-[TODO CONNECTION DIAGRAM]
+- (Blue) `Arduino D9` **<=>** `Stepper motor driver IN1`
+- (Blue) `Arduino D10` **<=>** `Stepper motor driver IN2`
+- (Blue) `Arduino D11` **<=>** `Stepper motor driver IN3`
+- (Blue) `Arduino D12` **<=>** `Stepper motor driver IN4`
+- (Cyan) `Arduino SDA` **<=>** `VL53L1X SDA`
+- (Cyan) `Arduino SCL` **<=>** `VL53L1X SCL`
+- (Red) `Arduino 5V` **<=>** `Stepper Motor Driver 5V` **<=>** `VL53L1X VIN`
+- (Black) `Arduino GND` **<=>** `Stepper Motor Driver GND` **<=>** `VL53L1X GND`
+- (Colorful) `Stepper Motor Driver` **<=>** `Stepper Motor`
 
-- Stepper motor driver IN1 -> 9
-
-- Stepper motor driver IN1 -> 10
-
-- Stepper motor driver IN1 -> 11
-
-- Stepper motor driver IN1 -> 12
+![vl53l1x_scanner_bb](img/vl53l1x_scanner_bb.png)
 
 **Result:**
 
