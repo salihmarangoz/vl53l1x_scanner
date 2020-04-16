@@ -65,7 +65,7 @@ void process3D(char *line);
 
 int main (int argc, char** argv)
 {
-    ros::init(argc, argv, "vl53l1x_scanner_node");
+    ros::init(argc, argv, "vl53l1x_scanner_driver_node");
     ros::NodeHandle nh;
     ros::NodeHandle priv_nh("~");
 

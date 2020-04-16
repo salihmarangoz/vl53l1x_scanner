@@ -9,6 +9,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_executable(vl53l1x_scanner_node src/vl53l1x_scanner_node.cpp)
-target_link_libraries(vl53l1x_scanner_node ${catkin_LIBRARIES})
+add_executable(vl53l1x_scanner_driver_node src/vl53l1x_scanner_driver_node.cpp)
+target_link_libraries(vl53l1x_scanner_driver_node ${catkin_LIBRARIES})
 
+add_executable(vl53l1x_scanner_calibration_node src/vl53l1x_scanner_calibration_node.cpp)
+target_link_libraries(vl53l1x_scanner_calibration_node ${catkin_LIBRARIES})

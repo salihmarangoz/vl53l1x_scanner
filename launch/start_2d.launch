@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <launch>
-    <node name="$(anon vl53l1x_scanner)" pkg="vl53l1x_scanner" type="vl53l1x_scanner_node"  output="screen">
+    <node name="$(anon vl53l1x_scanner_driver)" pkg="vl53l1x_scanner_driver" type="vl53l1x_scanner_driver_node"  output="screen">
 
         <!-- Hardware specific -->
         <param name="stepper_horizontal_angle_per_step" value="0.003067962"/>
