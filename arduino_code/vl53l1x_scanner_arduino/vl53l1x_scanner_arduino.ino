@@ -2,12 +2,18 @@
 #include <Wire.h>
 #include "vl53l1_api.h"
 
-//-----------------------------------------------------------------------------
-#define MIN(a,b) ((a)<(b)?(a):(b))
-#define INITIALIZE_PARAMETER(a) {if( (token = strtok(NULL, " ")) != NULL ) a = atol(token); Serial.print(F("#   ")); Serial.print(F(#a)); Serial.print(F(": ")); Serial.println((a));}
+#define VL53L1X_DEVICE_ADDR               (0x52)
+#define VL53L1X_WIRE_CLOCK                (400000)
+#define VL53L1X_ROI_MINCENTERED_TOPLEFTX  (6)
+#define VL53L1X_ROI_MINCENTERED_TOPLEFTY  (9) // 15
+#define VL53L1X_ROI_MINCENTERED_BOTRIGHTX (9)
+#define VL53L1X_ROI_MINCENTERED_BOTRIGHTY (6) // 0
+#define VERTICAL_POS_BIAS                 (-6)
+#define ARDUINO_SERIAL_BAUD_RATE          (9600)
+#define ARDUINO_INPUT_STRING_SIZE         (96)
 
 //-------------------- PROTOTYPES ---------------------------------------------
-void initialize();
+void initialize_hardware();
 void scan2D();
 void scan3D();
 void scan();
@@ -31,6 +37,10 @@ int stepper_pins[4] = {9,10,11,12};
 int stepper_delay = 2250; // my stepper motor misses step with 2000. So I added extra 250
 int stepper_step_min = -512;
 int stepper_step_max = +512;
+int laser_roi_topleftx = VL53L1X_ROI_MINCENTERED_TOPLEFTX;
+int laser_roi_toplefty = VL53L1X_ROI_MINCENTERED_TOPLEFTY;
+int laser_roi_botrightx = VL53L1X_ROI_MINCENTERED_BOTRIGHTX;
+int laser_roi_botrighty = VL53L1X_ROI_MINCENTERED_BOTRIGHTY;
 int laser_distance_mode = 3; // ADAPTIVE(0), short(1), medium(2), long(3)
 long laser_measurement_timing_budget_micro_seconds = 10000;
 int laser_inter_measurement_period_milli_seconds = 1;
@@ -41,15 +51,19 @@ int scanner_rewind = 0;
 int scanner_calibration_max_value = 500;
 
 //-------------- CONTANT PARAMETERS -------------------------------------------
-const int input_string_max_size = 96;
+const int input_string_max_size = ARDUINO_INPUT_STRING_SIZE;
 
 //-----------------------------------------------------------------------------
 void setup()
 {
   // Setup arduino
   input_string = (char*)malloc(input_string_max_size*sizeof(char)); // I was unable to decleare it in stack memory. I don't know why
+  if (input_string == NULL)
+  {
+    Serial.print(F("# FATAL ERROR: CANT ALLOCATE INPUT STRING IN MEMORY"));
+  }
   input_string[input_string_max_size-1] = '\0';
-	Serial.begin(9600);
+	Serial.begin(ARDUINO_SERIAL_BAUD_RATE);
   while (!Serial) {;} // wait for serial port to connect.
 }
 
@@ -105,13 +119,16 @@ void serialEvent()
       // C -> calibration
       // S -> start
       // P -> poweroff
-      // Serial.println(input_string); // For debugging purposes
+      // Serial.println(input_string); // debug
       char* token = strtok(input_string, " ");
       
       if (token[0] == 'I')  // I was unable to use switch statement here. It didn't work and I don't know why
       {
-        Serial.println(F("# ===== INITIALIZE ====="));
-        Serial.println(F("# [ROS Parameters]"));
+        Serial.println(F("# ===== INITIALIZE COMMAND ====="));
+        Serial.println(F("# [Read Parameters]"));
+
+#define INITIALIZE_PARAMETER(a) {if( (token = strtok(NULL, " ")) != NULL ) a = atol(token); Serial.print(F("#   ")); Serial.print(F(#a)); Serial.print(F(": ")); Serial.println((a));}
+        
         // Stepper Motor Parameters
         INITIALIZE_PARAMETER(stepper_pins[0]);
         INITIALIZE_PARAMETER(stepper_pins[1]);
@@ -121,6 +138,10 @@ void serialEvent()
         INITIALIZE_PARAMETER(stepper_step_min);
         INITIALIZE_PARAMETER(stepper_step_max);
         // Laser Parameters
+        INITIALIZE_PARAMETER(laser_roi_topleftx);
+        INITIALIZE_PARAMETER(laser_roi_toplefty);
+        INITIALIZE_PARAMETER(laser_roi_botrightx);
+        INITIALIZE_PARAMETER(laser_roi_botrighty);
         INITIALIZE_PARAMETER(laser_distance_mode);
         INITIALIZE_PARAMETER(laser_measurement_timing_budget_micro_seconds);
         INITIALIZE_PARAMETER(laser_inter_measurement_period_milli_seconds);
@@ -131,11 +152,11 @@ void serialEvent()
         INITIALIZE_PARAMETER(scanner_rewind);
         INITIALIZE_PARAMETER(scanner_calibration_max_value);
         
-        initialize();
+        initialize_hardware();
       }
       else if (token[0] == 'C')
       {
-        Serial.println(F("# ===== CALIBRATION ====="));
+        Serial.println(F("# ===== CALIBRATION COMMAND ====="));
         token = strtok(NULL, " ");
         int calib_command = atoi(token);
         if (calib_command > scanner_calibration_max_value) calib_command = scanner_calibration_max_value;
@@ -152,7 +173,7 @@ void serialEvent()
       }
       else if (token[0] == 'P')
       {
-        Serial.println(F("# ===== SHUTDOWN ====="));
+        Serial.println(F("# ===== SHUTDOWN COMMAND ====="));
         is_active = false;
         stepperStep(-stepper_pos, stepper_delay); // bring stepper to pos 0
         digitalWrite(stepper_pins[0], LOW);
@@ -170,7 +191,7 @@ void serialEvent()
 }
 
 
-void initialize()
+void initialize_hardware()
 {
   Serial.println(F("# [Init Hardware]"));
   // Initialize Stepper
@@ -183,13 +204,12 @@ void initialize()
   // Initialize VL53L1X
   Serial.println(F("#   Initializing VL53L1X..."));
   Wire.begin();
-  Wire.setClock(400000);
-  sensor.I2cDevAddr   = 0x52;
-  // smallest and centered possible roi (4x4): TODO
-  roiConfig.TopLeftX  = 6;
-  roiConfig.TopLeftY  = 15; //9
-  roiConfig.BotRightX = 9;
-  roiConfig.BotRightY = 0; // 6
+  Wire.setClock(VL53L1X_WIRE_CLOCK);
+  sensor.I2cDevAddr   = VL53L1X_DEVICE_ADDR;
+  roiConfig.TopLeftX  = laser_roi_topleftx;
+  roiConfig.TopLeftY  = laser_roi_toplefty; //9
+  roiConfig.BotRightX = laser_roi_botrightx;
+  roiConfig.BotRightY = laser_roi_botrighty; // 6
   check( VL53L1_software_reset(&sensor) );
   check( VL53L1_WaitDeviceBooted(&sensor) );
   check( VL53L1_DataInit(&sensor) );
@@ -200,7 +220,7 @@ void initialize()
   check( VL53L1_SetUserROI(&sensor, &roiConfig) );
   check( VL53L1_StartMeasurement(&sensor) );
 
-  Serial.println(F("# [VL53L1X Information]"));
+  Serial.println(F("# [Read VL53L1X Information]"));
 
   // device version/model information
   uint8_t byteData;
@@ -270,7 +290,7 @@ void scan3D()
     check(VL53L1_GetRangingMeasurementData(&sensor, &rangingData));
     Serial.print(stepper_pos); // horizontal pos
     Serial.print(F(" "));
-    Serial.print(i-6);           // vertical pos (-6 is constant for 13 vertical scans)
+    Serial.print(i+VERTICAL_POS_BIAS);
     Serial.print(F(" "));
     Serial.print(rangingData.RangeMilliMeter);
     Serial.print(F(" "));
@@ -311,7 +331,7 @@ int check(int err)
 
 
 //=====================================
-//=============== stepper ===============
+//=============== stepper =============
 //=====================================
 
 void stepperStep(int movement, unsigned long delay_time){

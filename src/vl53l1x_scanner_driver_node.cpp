@@ -6,13 +6,15 @@
 #include <vector>
 #include <algorithm>
 
+#define CALCULATE_INTENSITY(SIGNAL_RATE, AMBIENT_RATE) ( (SIGNAL_RATE) )
+
 union PC_DATA_t
 {
     struct
     {
-        float x, y, z, range_status, intensity, ambient_rate;
+        float x, y, z, range_status, intensity, signal_rate, ambient_rate;
     }structured;
-    uint8_t raw[24];
+    uint8_t raw[28];
 };
 
 // Global Variables
@@ -45,6 +47,10 @@ int stepper_pin_4 = 12;
 int stepper_delay = 2250; // my stepper motor misses step with 2000. So I added extra 250
 int stepper_step_min = -300;
 int stepper_step_max = +300;
+int laser_roi_topleftx = 6;
+int laser_roi_toplefty = 9;
+int laser_roi_botrightx = 9;
+int laser_roi_botrighty = 6;
 int laser_distance_mode = 3; // ADAPTIVE(0), short(1), medium(2), long(3)
 int laser_measurement_timing_budget_micro_seconds = 500000;
 int laser_inter_measurement_period_milli_seconds = 50;
@@ -87,6 +93,10 @@ int main (int argc, char** argv)
     priv_nh.param("stepper_delay", stepper_delay, stepper_delay);
     priv_nh.param("stepper_step_min", stepper_step_min, stepper_step_min);
     priv_nh.param("stepper_step_max", stepper_step_max, stepper_step_max);
+    priv_nh.param("laser_roi_topleftx", laser_roi_topleftx, laser_roi_topleftx);
+    priv_nh.param("laser_roi_toplefty", laser_roi_toplefty, laser_roi_toplefty);
+    priv_nh.param("laser_roi_botrightx", laser_roi_botrightx, laser_roi_botrightx);
+    priv_nh.param("laser_roi_botrighty", laser_roi_botrighty, laser_roi_botrighty);
     priv_nh.param("laser_distance_mode", laser_distance_mode, laser_distance_mode);
     priv_nh.param("laser_measurement_timing_budget_micro_seconds", laser_measurement_timing_budget_micro_seconds, laser_measurement_timing_budget_micro_seconds);
     priv_nh.param("laser_inter_measurement_period_milli_seconds", laser_inter_measurement_period_milli_seconds, laser_inter_measurement_period_milli_seconds);
@@ -151,12 +161,12 @@ int main (int argc, char** argv)
         }
         else if (scanner_3d_mode)
         {
-            //ROS_ERROR("%s", line);
+            ROS_ERROR("%s", line);
             process3D(line);
         }
         else
         {
-            //ROS_ERROR("%s", line);
+            ROS_ERROR("%s", line);
             process2D(line);
         }
     }
@@ -165,24 +175,27 @@ int main (int argc, char** argv)
 
 }
 
-
 void sendParameters()
 {
-    sprintf(write_buffer, "I %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n", stepper_pin_1, \
-                                                                            stepper_pin_2, \
-                                                                            stepper_pin_3, \
-                                                                            stepper_pin_4, \
-                                                                            stepper_delay, \
-                                                                            stepper_step_min, \
-                                                                            stepper_step_max, \
-                                                                            laser_distance_mode, \
-                                                                            laser_measurement_timing_budget_micro_seconds, \
-                                                                            laser_inter_measurement_period_milli_seconds, \
-                                                                            scanner_3d_mode, \
-                                                                            scanner_3d_vertical_steps_per_scan, \
-                                                                            scanner_horizontal_steps_per_scan, \
-                                                                            scanner_rewind, \
-                                                                            scanner_calibration_max_value);
+    sprintf(write_buffer, "I %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",   stepper_pin_1, \
+                                                                                            stepper_pin_2, \
+                                                                                            stepper_pin_3, \
+                                                                                            stepper_pin_4, \
+                                                                                            stepper_delay, \
+                                                                                            stepper_step_min, \
+                                                                                            stepper_step_max, \
+                                                                                            laser_roi_topleftx, \
+                                                                                            laser_roi_toplefty, \
+                                                                                            laser_roi_botrightx, \
+                                                                                            laser_roi_botrighty, \
+                                                                                            laser_distance_mode, \
+                                                                                            laser_measurement_timing_budget_micro_seconds, \
+                                                                                            laser_inter_measurement_period_milli_seconds, \
+                                                                                            scanner_3d_mode, \
+                                                                                            scanner_3d_vertical_steps_per_scan, \
+                                                                                            scanner_horizontal_steps_per_scan, \
+                                                                                            scanner_rewind, \
+                                                                                            scanner_calibration_max_value);
     //ROS_INFO("WRITE: %s", write_buffer);
     ser.write(write_buffer); // Initialize
     ser.flush();
@@ -270,7 +283,7 @@ void process2D(char *line)
         sscanf(line, "%d %d %d %d %f %f", &horizontal_pos, &vertical_pos, &range, &status, &sig1, &sig2);
 
         laser_scan.ranges.push_back( ((float)range)/1000.0 );
-        laser_scan.intensities.push_back( sig1 );
+        laser_scan.intensities.push_back( CALCULATE_INTENSITY(sig1, sig2) );
     }
 
 }
@@ -297,8 +310,8 @@ void process3D(char *line)
         // Describes the channels and their layout in the binary data blob.
         pc_scan.fields.clear();
 
-        std::string field_names[6] = {"x", "y", "z", "range_status", "intensity", "ambient_rate"};
-        for (int i=0; i<6; i++)
+        std::string field_names[7] = {"x", "y", "z", "range_status", "intensity", "signal_rate", "ambient_rate"};
+        for (int i=0; i<7; i++)
         {
             sensor_msgs::PointField point_field;
             point_field.name = field_names[i];
@@ -329,7 +342,8 @@ void process3D(char *line)
         pc_data.structured.y = r * cos(beta) * sin(theta);
         pc_data.structured.z = r * sin(beta);
         pc_data.structured.range_status = status;
-        pc_data.structured.intensity = sig1;
+        pc_data.structured.intensity = CALCULATE_INTENSITY(sig1, sig2);
+        pc_data.structured.signal_rate = sig1;
         pc_data.structured.ambient_rate = sig2;
 
         //ROS_INFO("%f %f %f", pc_data.structured.x,pc_data.structured.y,pc_data.structured.z);

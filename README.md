@@ -17,15 +17,18 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 - ROS Drivers
 - 2D and 3D scanning mode
 - Resets stepper motor position when the driver is stopped
-- (TODO) Adaptive scanning parameters for 2D scanning (for realtime use cases)
-  - Adaptive stepper resolution based on measurement (will output pointcloud instead of laserscan)
-  - Adaptive laser measurement timing (based on sig1, sig2, measurement)
-  - Adaptive RoI height (or width) (based on sig1, sig2 measurement)
+- (TODO) Adaptive parameters (Smart Measurement)
+  - (TODO) Adaptive stepper resolution based on measurement (will output pointcloud instead of laserscan)
+  - (TODO) Adaptive measurement mode (based on sig1, sig2 , measurement)
+  - (TODO) Adaptive laser measurement timing (based on sig1, sig2, measurement)
+  - (TODO) Adaptive RoI height (or width) (based on sig1, sig2 measurement)
 - (TODO) Bag files
 - (TODO FOR ANOTHER PROJECT) Deep Learning based scan noise reduction
   - fullscan based and/or single measurement based
   - dataset_X: measurements with fast parameters
   - dataset_Y: measurements with accurate parameters
+- (TODO) Stepper One Phase/Two Phase Mode
+- (TODO) Stepper Half Step Mode
 
 
 
@@ -109,6 +112,7 @@ $ cd ~/catkin_ws/src/vl53l1x_scanner/script/
 # Positive for counter-clockwise or negative for clockwise rotation.
 # The value "+100" is an example for positive rotation. Try "-100".
 # As a result, laser should be facing forward.
+# NOTE: May not work at the first try.
 $ ./calibrate.sh /dev/ttyACM0 +100   
 ```
 
