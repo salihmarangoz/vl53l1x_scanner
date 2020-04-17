@@ -50,19 +50,16 @@ int scanner_horizontal_steps_per_scan = 32;
 int scanner_rewind = 0;
 int scanner_calibration_max_value = 500;
 
-//-------------- CONTANT PARAMETERS -------------------------------------------
-const int input_string_max_size = ARDUINO_INPUT_STRING_SIZE;
-
 //-----------------------------------------------------------------------------
 void setup()
 {
   // Setup arduino
-  input_string = (char*)malloc(input_string_max_size*sizeof(char)); // I was unable to decleare it in stack memory. I don't know why
+  input_string = (char*)malloc(ARDUINO_INPUT_STRING_SIZE*sizeof(char)); // I was unable to decleare it in stack memory. I don't know why
   if (input_string == NULL)
   {
     Serial.print(F("# FATAL ERROR: CANT ALLOCATE INPUT STRING IN MEMORY"));
   }
-  input_string[input_string_max_size-1] = '\0';
+  input_string[ARDUINO_INPUT_STRING_SIZE-1] = '\0';
 	Serial.begin(ARDUINO_SERIAL_BAUD_RATE);
   while (!Serial) {;} // wait for serial port to connect.
 }

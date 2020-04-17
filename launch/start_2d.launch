@@ -7,7 +7,6 @@
         <param name="scanner_serial_port" value="/dev/ttyACM0"/>
         <param name="scanner_serial_baud_rate" value="9600"/>
         <param name="stepper_horizontal_angle_per_step" value="0.003067962"/>
-        <!--DONT MODIFY--><param name="laser_vertical_angle_per_roi_cell" value="0.035"/><!--DONT MODIFY-->
         <param name="laser_range_min" value="0.0"/>
         <param name="laser_range_max" value="4.0"/>
 
@@ -27,11 +26,10 @@
         <param name="laser_roi_botrightx" value="9"/>
         <param name="laser_roi_botrighty" value="0"/> <!-- TODO: long scan: 0 -->
         <param name="laser_distance_mode" value="3"/>
-        <param name="laser_measurement_timing_budget_micro_seconds" value="200000"/>
-        <param name="laser_inter_measurement_period_milli_seconds" value="16"/>
+        <param name="laser_measurement_timing_budget_micro_seconds" value="400000"/>
+        <param name="laser_inter_measurement_period_milli_seconds" value="40"/>
         <param name="scanner_3d_mode" value="0"/>
-        <!--DONT MODIFY--><param name="scanner_3d_vertical_steps_per_scan" value="1"/><!--DONT MODIFY-->
-        <param name="scanner_horizontal_steps_per_scan" value="8"/>
+        <param name="scanner_horizontal_steps_per_scan" value="16"/>
         <param name="scanner_rewind" value="1"/>
         <param name="scanner_calibration_max_value" value="500"/>
 

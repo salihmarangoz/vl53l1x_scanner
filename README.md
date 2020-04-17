@@ -10,22 +10,20 @@
 
 ## Support me on Patreon
 
-<a href="https://www.patreon.com/bePatron?u=33807246" data-patreon-widget-type="become-patron-button">Become a Patron!</a><script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
+[![Become a Patron!](https://i.imgur.com/BbE01dL.png)](https://www.patreon.com/bePatron?u=33807246)
 
 
 
 ## 1. Introduction
 
-This is my DIY laser scanner project that I designed in quarantine days of covid-19.  
+This is my DIY laser scanner project that I designed in quarantine days of covid-19.  I aim to demonstrate the capabilities of VL53L1X range finder sensor and design a 2D/3D scanner and depth camera.
 
 **Features:**
 
 - ROS Driver
-
 - 2D and 3D scanning mode (~1500 in horizontal ~270 deg fov / 13 in vertical ~27 deg fov)
-
-- Resets stepper motor position when the driver is stopped
-
+- (TODO) Depth camera mode
+- Resets stepper motor position to 0 when the driver is terminated
 - (TODO) Adaptive parameters (Smart Measurement)
   
   - Adaptive Signal Power
@@ -36,16 +34,12 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
     - (TODO) Adaptive stepper resolution based on measurement
     - (TODO) Adaptive measurement mode (based on sig1, sig2 , measurement)
     - (TODO) Sampling missing data caused by adaptive resolution
-  
 - (TODO) Bag files
-
 - (TODO FOR ANOTHER PROJECT) Deep Learning based scan noise reduction
   - fullscan based and/or single measurement based
   - dataset_X: measurements with fast parameters
   - dataset_Y: measurements with accurate parameters
-  
 - (TODO) Stepper One Phase/Two Phase Mode
-
 - (TODO) Stepper Half Step Mode
 
 

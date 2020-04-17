@@ -22,16 +22,14 @@
         <param name="stepper_delay" value="2250"/>
         <param name="stepper_step_min" value="-512"/>
         <param name="stepper_step_max" value="+512"/>
-        <!--DONT MODIFY--><param name="laser_roi_topleftx" value="6"/><!--DONT MODIFY-->
-        <!--DONT MODIFY--><param name="laser_roi_toplefty" value="9"/><!--DONT MODIFY-->
-        <!--DONT MODIFY--><param name="laser_roi_botrightx" value="9"/><!--DONT MODIFY-->
-        <!--DONT MODIFY--><param name="laser_roi_botrighty" value="6"/><!--DONT MODIFY-->
+        <param name="laser_roi_topleftx" value="6"/>
+        <param name="laser_roi_botrightx" value="9"/>
         <param name="laser_distance_mode" value="3"/>
-        <param name="laser_measurement_timing_budget_micro_seconds" value="400000"/>
-        <param name="laser_inter_measurement_period_milli_seconds" value="40"/>
+        <param name="laser_measurement_timing_budget_micro_seconds" value="500000"/>
+        <param name="laser_inter_measurement_period_milli_seconds" value="50"/>
         <param name="scanner_3d_mode" value="1"/>
-        <param name="scanner_3d_vertical_steps_per_scan" value="2"/>
-        <param name="scanner_horizontal_steps_per_scan" value="24"/>
+        <param name="scanner_3d_vertical_steps_per_scan" value="1"/>
+        <param name="scanner_horizontal_steps_per_scan" value="4"/>
         <param name="scanner_rewind" value="1"/>
         <param name="scanner_calibration_max_value" value="500"/>
 
