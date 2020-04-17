@@ -19,9 +19,11 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 - Resets stepper motor position when the driver is stopped
 - (TODO) Adaptive scanning parameters for 2D scanning (for realtime use cases)
   - Adaptive stepper resolution based on measurement (will output pointcloud instead of laserscan)
-  - Adaptive laser measurement timing and Adaptive RoI height (based on sig1 and sig2)
+  - Adaptive laser measurement timing (based on sig1, sig2, measurement)
+  - Adaptive RoI height (or width) (based on sig1, sig2 measurement)
 - (TODO) Bag files
 - (TODO FOR ANOTHER PROJECT) Deep Learning based scan noise reduction
+  - fullscan based and/or single measurement based
   - dataset_X: measurements with fast parameters
   - dataset_Y: measurements with accurate parameters
 
