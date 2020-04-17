@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #define CALCULATE_INTENSITY(SIGNAL_RATE, AMBIENT_RATE) ( (SIGNAL_RATE) )
+#define ARDUINO_INPUT_STRING_SIZE (96)
 
 union PC_DATA_t
 {
@@ -29,6 +30,8 @@ bool laser_scan_direction;
 
 
 // Hardware specific
+std::string scanner_serial_port = "/dev/ttyACM0";
+int scanner_serial_baud_rate = 9600;
 double stepper_horizontal_angle_per_step = 0.003067962; // pi/1024 TODO
 double laser_vertical_angle_per_roi_cell = 0.035; // TODO
 double laser_range_min = 0.0;
@@ -76,16 +79,17 @@ int main (int argc, char** argv)
     ros::NodeHandle priv_nh("~");
 
     // Hardware specific
+    priv_nh.param("scanner_serial_port", scanner_serial_port, scanner_serial_port);
+    priv_nh.param("scanner_serial_baud_rate", scanner_serial_baud_rate, scanner_serial_baud_rate);
     priv_nh.param("stepper_horizontal_angle_per_step", stepper_horizontal_angle_per_step, stepper_horizontal_angle_per_step);
     priv_nh.param("laser_vertical_angle_per_roi_cell", laser_vertical_angle_per_roi_cell, laser_vertical_angle_per_roi_cell);
     priv_nh.param("laser_range_min", laser_range_min, laser_range_min);
     priv_nh.param("laser_range_max", laser_range_max, laser_range_max);
-    
 
     // ROS specific
     priv_nh.param("laserscan_frame", laserscan_frame, laserscan_frame);
 
-    // Scanner specific
+    // Scanner specific (will be sent to the scanner)
     priv_nh.param("stepper_pin_1", stepper_pin_1, stepper_pin_1);
     priv_nh.param("stepper_pin_2", stepper_pin_2, stepper_pin_2);
     priv_nh.param("stepper_pin_3", stepper_pin_3, stepper_pin_3);
@@ -117,8 +121,8 @@ int main (int argc, char** argv)
 
     try
     {
-        ser.setPort("/dev/ttyACM0");
-        ser.setBaudrate(9600);
+        ser.setPort(scanner_serial_port);
+        ser.setBaudrate(scanner_serial_baud_rate);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
         ser.open();
@@ -197,6 +201,10 @@ void sendParameters()
                                                                                             scanner_rewind, \
                                                                                             scanner_calibration_max_value);
     //ROS_INFO("WRITE: %s", write_buffer);
+    if (strlen(write_buffer)+1 > ARDUINO_INPUT_STRING_SIZE)
+    {
+        ROS_FATAL("OVERFLOW ARDUINO_INPUT_STRING_SIZE!");
+    }
     ser.write(write_buffer); // Initialize
     ser.flush();
 }

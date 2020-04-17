@@ -3,29 +3,35 @@
 <launch>
     <node name="$(anon vl53l1x_scanner_driver)" pkg="vl53l1x_scanner" type="vl53l1x_scanner_driver_node"  output="screen">
 
-        <!-- Hardware specific -->
+        <!-- ===== [HARDWARE PARAMETERS] ===== -->
+        <param name="scanner_serial_port" value="/dev/ttyACM0"/>
+        <param name="scanner_serial_baud_rate" value="9600"/>
         <param name="stepper_horizontal_angle_per_step" value="0.003067962"/>
         <param name="laser_vertical_angle_per_roi_cell" value="0.035"/>
         <param name="laser_range_min" value="0.0"/>
         <param name="laser_range_max" value="4.0"/>
 
-        <!-- ROS specific -->
+        <!-- ===== [ROS PARAMETERS] ===== -->
         <param name="laserscan_frame" value="laser"/>
 
-        <!-- Scanner specific -->
+        <!-- ===== [SCANNER PARAMETERS (WILL BE SENT TO THE SCANNER)] ===== -->
         <param name="stepper_pin_1" value="9"/>
         <param name="stepper_pin_2" value="10"/>
         <param name="stepper_pin_3" value="11"/>
         <param name="stepper_pin_4" value="12"/>
         <param name="stepper_delay" value="2250"/>
-        <param name="stepper_step_min" value="-760"/>
-        <param name="stepper_step_max" value="+760"/>
+        <param name="stepper_step_min" value="-512"/>
+        <param name="stepper_step_max" value="+512"/>
+        <!--DONT MODIFY--><param name="laser_roi_topleftx" value="6"/><!--DONT MODIFY-->
+        <!--DONT MODIFY--><param name="laser_roi_toplefty" value="9"/><!--DONT MODIFY-->
+        <!--DONT MODIFY--><param name="laser_roi_botrightx" value="9"/><!--DONT MODIFY-->
+        <!--DONT MODIFY--><param name="laser_roi_botrighty" value="6"/><!--DONT MODIFY-->
         <param name="laser_distance_mode" value="3"/>
-        <param name="laser_measurement_timing_budget_micro_seconds" value="500000"/>
-        <param name="laser_inter_measurement_period_milli_seconds" value="50"/>
+        <param name="laser_measurement_timing_budget_micro_seconds" value="400000"/>
+        <param name="laser_inter_measurement_period_milli_seconds" value="40"/>
         <param name="scanner_3d_mode" value="1"/>
-        <param name="scanner_3d_vertical_steps_per_scan" value="1"/>
-        <param name="scanner_horizontal_steps_per_scan" value="40"/>
+        <param name="scanner_3d_vertical_steps_per_scan" value="2"/>
+        <param name="scanner_horizontal_steps_per_scan" value="24"/>
         <param name="scanner_rewind" value="1"/>
         <param name="scanner_calibration_max_value" value="500"/>
 

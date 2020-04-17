@@ -14,8 +14,8 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 
 **Features:**
 
-- ROS Drivers
-- 2D and 3D scanning mode
+- ROS Driver
+- 2D and 3D scanning mode (~1500 in horizontal ~270 deg fov / 13 in vertical ~27 deg fov)
 - Resets stepper motor position when the driver is stopped
 - (TODO) Adaptive parameters (Smart Measurement)
   - (TODO) Adaptive stepper resolution based on measurement (will output pointcloud instead of laserscan)
@@ -149,6 +149,8 @@ $ roslaunch vl53l1x_scanner rviz.launch
 - Math calculation for measurement to pointcloud conversion:
 
 ![pointcloud_calculation](img/pointcloud_calculation.png)
+
+- Intensity value is equal to `signal_rate` (This may change in the future)
 
 
 
