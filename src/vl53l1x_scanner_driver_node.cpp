@@ -10,9 +10,9 @@ union PC_DATA_t
 {
     struct
     {
-        float x, y, z, intensity;
+        float x, y, z, range_status, intensity, ambient_rate;
     }structured;
-    uint8_t raw[16];
+    uint8_t raw[24];
 };
 
 // Global Variables
@@ -151,14 +151,13 @@ int main (int argc, char** argv)
         }
         else if (scanner_3d_mode)
         {
-            ROS_ERROR("%s", line);
+            //ROS_ERROR("%s", line);
             process3D(line);
         }
         else
         {
-            ROS_ERROR("%s", line);
+            //ROS_ERROR("%s", line);
             process2D(line);
-            //pub.publish(scan);
         }
     }
 
@@ -298,8 +297,8 @@ void process3D(char *line)
         // Describes the channels and their layout in the binary data blob.
         pc_scan.fields.clear();
 
-        std::string field_names[4] = {"x", "y", "z", "intensity"};
-        for (int i=0; i<4; i++)
+        std::string field_names[6] = {"x", "y", "z", "range_status", "intensity", "ambient_rate"};
+        for (int i=0; i<6; i++)
         {
             sensor_msgs::PointField point_field;
             point_field.name = field_names[i];
@@ -321,19 +320,19 @@ void process3D(char *line)
         float sig1, sig2;
         sscanf(line, "%d %d %d %d %f %f", &horizontal_pos, &vertical_pos, &range, &status, &sig1, &sig2);
 
-        //stepper_horizontal_angle_per_step
-
         float r = ((float)range)/1000.0;
-        float theta = stepper_horizontal_angle_per_step * horizontal_pos;
-        float beta = (laser_vertical_angle_per_roi_cell) * (((float)vertical_pos)-6.5); // TODO
+        float theta = stepper_horizontal_angle_per_step * ((float)horizontal_pos);
+        float beta = laser_vertical_angle_per_roi_cell * ((float)vertical_pos);
 
         PC_DATA_t pc_data;
         pc_data.structured.x = r * cos(beta) * cos(theta);
         pc_data.structured.y = r * cos(beta) * sin(theta);
         pc_data.structured.z = r * sin(beta);
+        pc_data.structured.range_status = status;
         pc_data.structured.intensity = sig1;
+        pc_data.structured.ambient_rate = sig2;
 
-        ROS_INFO("%f %f %f", pc_data.structured.x,pc_data.structured.y,pc_data.structured.z);
+        //ROS_INFO("%f %f %f", pc_data.structured.x,pc_data.structured.y,pc_data.structured.z);
 
         for (int i=0; i<sizeof(pc_data.raw); i++)
         {

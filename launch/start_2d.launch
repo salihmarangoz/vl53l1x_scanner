@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <launch>
-    <node name="$(anon vl53l1x_scanner_driver)" pkg="vl53l1x_scanner_driver" type="vl53l1x_scanner_driver_node"  output="screen">
+    <node name="$(anon vl53l1x_scanner_driver)" pkg="vl53l1x_scanner" type="vl53l1x_scanner_driver_node"  output="screen">
 
         <!-- Hardware specific -->
         <param name="stepper_horizontal_angle_per_step" value="0.003067962"/>
@@ -18,14 +18,14 @@
         <param name="stepper_pin_3" value="11"/>
         <param name="stepper_pin_4" value="12"/>
         <param name="stepper_delay" value="2250"/>
-        <param name="stepper_step_min" value="-300"/>
-        <param name="stepper_step_max" value="+300"/>
+        <param name="stepper_step_min" value="-800"/>
+        <param name="stepper_step_max" value="+800"/>
         <param name="laser_distance_mode" value="3"/>
-        <param name="laser_measurement_timing_budget_micro_seconds" value="500000"/>
-        <param name="laser_inter_measurement_period_milli_seconds" value="50"/>
+        <param name="laser_measurement_timing_budget_micro_seconds" value="200000"/>
+        <param name="laser_inter_measurement_period_milli_seconds" value="20"/>
         <param name="scanner_3d_mode" value="0"/>
         <!--param name="scanner_3d_vertical_steps_per_scan" value="1"/-->
-        <param name="scanner_horizontal_steps_per_scan" value="20"/>
+        <param name="scanner_horizontal_steps_per_scan" value="5"/>
         <param name="scanner_rewind" value="1"/>
         <param name="scanner_calibration_max_value" value="500"/>
 

@@ -182,10 +182,11 @@ void initialize()
   Wire.begin();
   Wire.setClock(400000);
   sensor.I2cDevAddr   = 0x52;
+  // smallest and centered possible roi (4x4): TODO
   roiConfig.TopLeftX  = 6;
-  roiConfig.TopLeftY  = 9;
+  roiConfig.TopLeftY  = 15; //9
   roiConfig.BotRightX = 9;
-  roiConfig.BotRightY = 6;
+  roiConfig.BotRightY = 0; // 6
   check( VL53L1_software_reset(&sensor) );
   check( VL53L1_WaitDeviceBooted(&sensor) );
   check( VL53L1_DataInit(&sensor) );
@@ -214,7 +215,7 @@ void scan2D()
   check(VL53L1_GetRangingMeasurementData(&sensor, &rangingData));
   Serial.print(stepper_pos); // horizontal pos
   Serial.print(F(" "));
-  Serial.print(7);   // vertical pos
+  Serial.print(0);   // vertical pos
   Serial.print(F(" "));
   Serial.print(rangingData.RangeMilliMeter);
   Serial.print(F(" "));
@@ -238,7 +239,7 @@ void scan3D()
     check(VL53L1_GetRangingMeasurementData(&sensor, &rangingData));
     Serial.print(stepper_pos); // horizontal pos
     Serial.print(F(" "));
-    Serial.print(i);           // vertical pos
+    Serial.print(i-6);           // vertical pos (-6 is constant for 13 vertical scans)
     Serial.print(F(" "));
     Serial.print(rangingData.RangeMilliMeter);
     Serial.print(F(" "));

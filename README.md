@@ -16,9 +16,14 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 
 - ROS Drivers
 - 2D and 3D scanning mode
-- (TODO) Laser parameters adaptive mode
 - Resets stepper motor position when the driver is stopped
+- (TODO) Adaptive scanning parameters for 2D scanning (for realtime use cases)
+  - Adaptive stepper resolution based on measurement (will output pointcloud instead of laserscan)
+  - Adaptive laser measurement timing and Adaptive RoI height (based on sig1 and sig2)
 - (TODO) Bag files
+- (TODO FOR ANOTHER PROJECT) Deep Learning based scan noise reduction
+  - dataset_X: measurements with fast parameters
+  - dataset_Y: measurements with accurate parameters
 
 
 
