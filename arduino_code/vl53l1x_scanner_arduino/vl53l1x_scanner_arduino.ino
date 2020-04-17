@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------
 #define MIN(a,b) ((a)<(b)?(a):(b))
-#define INITIALIZE_PARAMETER(a) {if( (token = strtok(NULL, " ")) != NULL ) a = atol(token); Serial.print(F("# ")); Serial.print(F(#a)); Serial.print(F(": ")); Serial.println((a));}
+#define INITIALIZE_PARAMETER(a) {if( (token = strtok(NULL, " ")) != NULL ) a = atol(token); Serial.print(F("#   ")); Serial.print(F(#a)); Serial.print(F(": ")); Serial.println((a));}
 
 //-------------------- PROTOTYPES ---------------------------------------------
 void initialize();
@@ -110,8 +110,8 @@ void serialEvent()
       
       if (token[0] == 'I')  // I was unable to use switch statement here. It didn't work and I don't know why
       {
-        Serial.println(F("# Initialize"));
-        
+        Serial.println(F("# ===== INITIALIZE ====="));
+        Serial.println(F("# [ROS Parameters]"));
         // Stepper Motor Parameters
         INITIALIZE_PARAMETER(stepper_pins[0]);
         INITIALIZE_PARAMETER(stepper_pins[1]);
@@ -135,7 +135,7 @@ void serialEvent()
       }
       else if (token[0] == 'C')
       {
-        Serial.println(F("# Calibration"));
+        Serial.println(F("# ===== CALIBRATION ====="));
         token = strtok(NULL, " ");
         int calib_command = atoi(token);
         if (calib_command > scanner_calibration_max_value) calib_command = scanner_calibration_max_value;
@@ -145,14 +145,14 @@ void serialEvent()
       }
       else if (token[0] == 'S')
       {
-        Serial.println(F("# Start"));
+        Serial.println(F("# ===== START COMMAND ====="));
         stepperStep(stepper_step_min, stepper_delay); // bring stepper to pos 0
         is_active = true;
         Serial.println("$+"); // FULL SCAN HEADER
       }
       else if (token[0] == 'P')
       {
-        Serial.println(F("# Shutdown"));
+        Serial.println(F("# ===== SHUTDOWN ====="));
         is_active = false;
         stepperStep(-stepper_pos, stepper_delay); // bring stepper to pos 0
         digitalWrite(stepper_pins[0], LOW);
@@ -172,13 +172,16 @@ void serialEvent()
 
 void initialize()
 {
-  // Setup Stepper
+  Serial.println(F("# [Init Hardware]"));
+  // Initialize Stepper
+  Serial.println(F("#   Initializing Stepper..."));
   pinMode(stepper_pins[0], OUTPUT);
   pinMode(stepper_pins[1], OUTPUT);
   pinMode(stepper_pins[2], OUTPUT);
   pinMode(stepper_pins[3], OUTPUT);
 
-  // Setup VL53L1X
+  // Initialize VL53L1X
+  Serial.println(F("#   Initializing VL53L1X..."));
   Wire.begin();
   Wire.setClock(400000);
   sensor.I2cDevAddr   = 0x52;
@@ -196,15 +199,43 @@ void initialize()
   check( VL53L1_SetInterMeasurementPeriodMilliSeconds(&sensor, laser_inter_measurement_period_milli_seconds) ); // 50
   check( VL53L1_SetUserROI(&sensor, &roiConfig) );
   check( VL53L1_StartMeasurement(&sensor) );
+
+  Serial.println(F("# [VL53L1X Information]"));
+
+  // device version/model information
   uint8_t byteData;
-  uint16_t wordData;
-  VL53L1_RdByte(&sensor, 0x010F, &byteData);
-  Serial.print(F("# VL53L1X Model_ID: "));
+  check( VL53L1_RdByte(&sensor, 0x010F, &byteData) );
+  Serial.print(F("#   Model ID: "));
   Serial.println(byteData, HEX);
-  VL53L1_RdByte(&sensor, 0x0110, &byteData);
-  Serial.print(F("# VL53L1X Module_Type: "));
+  check( VL53L1_RdByte(&sensor, 0x0110, &byteData) );
+  Serial.print(F("#   Module Type: "));
   Serial.println(byteData, HEX);
 
+  uint8_t product_rev_major, product_rev_minor;
+  check( VL53L1_GetProductRevision(&sensor, &product_rev_major, &product_rev_minor) );
+  Serial.print(F("#   Product Revision: "));
+  Serial.print(product_rev_major);
+  Serial.print(F("."));
+  Serial.println(product_rev_minor);
+
+  VL53L1_Version_t version_inf;
+  check( VL53L1_GetVersion(&version_inf) );
+  Serial.print(F("#   API Version: "));
+  Serial.print(version_inf.major);
+  Serial.print(F("."));
+  Serial.print(version_inf.minor);
+  Serial.print(F(" build "));
+  Serial.print(version_inf.build);
+  Serial.print(F(" revision "));
+  Serial.println(version_inf.revision);
+/*
+  long unsigned int optical_center_x, optical_center_y;
+  check( VL53L1_GetOpticalCenter(&sensor, &optical_center_x, &optical_center_y) );
+  Serial.print(F("#   Optical Center X: "));
+  Serial.println(optical_center_x);
+  Serial.print(F("#   Optical Center Y: "));
+  Serial.println(optical_center_y);
+*/
   is_initialized = true;
 }
 
@@ -272,7 +303,7 @@ int check(int err)
 {
   if (err != 0)
   {
-    Serial.print(F("VL53L1X ERR CODE: "));
+    Serial.print(F("# ERROR: "));
     Serial.println(err);
   }
   return err;
