@@ -8,6 +8,12 @@
       * [5. Notes](#5-notes)
       * [6. References](#6-references)
 
+## Support me on Patreon
+
+<a href="https://www.patreon.com/bePatron?u=33807246" data-patreon-widget-type="become-patron-button">Become a Patron!</a><script async src="https://c6.patreon.com/becomePatronButton.bundle.js"></script>
+
+
+
 ## 1. Introduction
 
 This is my DIY laser scanner project that I designed in quarantine days of covid-19.  
@@ -15,19 +21,31 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 **Features:**
 
 - ROS Driver
+
 - 2D and 3D scanning mode (~1500 in horizontal ~270 deg fov / 13 in vertical ~27 deg fov)
+
 - Resets stepper motor position when the driver is stopped
+
 - (TODO) Adaptive parameters (Smart Measurement)
-  - (TODO) Adaptive stepper resolution based on measurement (will output pointcloud instead of laserscan)
-  - (TODO) Adaptive measurement mode (based on sig1, sig2 , measurement)
-  - (TODO) Adaptive laser measurement timing (based on sig1, sig2, measurement)
-  - (TODO) Adaptive RoI height (or width) (based on sig1, sig2 measurement)
+  
+  - Adaptive Signal Power
+    - (TODO) Adaptive laser measurement timing (based on sig1, sig2, measurement)
+    - (TODO) Adaptive RoI height (or width) (based on sig1, sig2 measurement)
+  
+  - Adaptive Resolution
+    - (TODO) Adaptive stepper resolution based on measurement
+    - (TODO) Adaptive measurement mode (based on sig1, sig2 , measurement)
+    - (TODO) Sampling missing data caused by adaptive resolution
+  
 - (TODO) Bag files
+
 - (TODO FOR ANOTHER PROJECT) Deep Learning based scan noise reduction
   - fullscan based and/or single measurement based
   - dataset_X: measurements with fast parameters
   - dataset_Y: measurements with accurate parameters
+  
 - (TODO) Stepper One Phase/Two Phase Mode
+
 - (TODO) Stepper Half Step Mode
 
 
@@ -143,7 +161,7 @@ $ roslaunch vl53l1x_scanner rviz.launch
 ## 5. Notes
 
 - Stepper motor delay set as 2.25ms instead of 2ms, because it was missing steps.
-- tepper motor phase set as 1 instead of 2, because torque was enough.
+- Stepper motor phase set as 1 instead of 2, because torque was enough.
 - (TODO) 28BYJ-48 steps per revolution is 2048 instead of 2038.
 
 - Math calculation for measurement to pointcloud conversion:
