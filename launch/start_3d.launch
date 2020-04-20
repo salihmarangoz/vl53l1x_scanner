@@ -5,7 +5,6 @@
 
         <!-- ===== [HARDWARE PARAMETERS] ===== -->
         <param name="scanner_serial_port" value="/dev/ttyACM0"/>
-        <param name="scanner_serial_baud_rate" value="9600"/>
         <param name="stepper_horizontal_angle_per_step" value="0.003067962"/>
         <param name="laser_vertical_angle_per_roi_cell" value="0.035"/>
         <param name="laser_range_min" value="0.04"/>
@@ -27,7 +26,7 @@
         <param name="laser_distance_mode" value="3"/>
         <param name="laser_measurement_timing_budget_micro_seconds" value="500000"/>
         <param name="laser_inter_measurement_period_milli_seconds" value="50"/>
-        <param name="scanner_3d_mode" value="1"/>
+        <param name="scanner_mode" value="2"/>
         <param name="scanner_3d_vertical_steps_per_scan" value="1"/>
         <param name="scanner_horizontal_steps_per_scan" value="4"/>
         <param name="scanner_rewind" value="1"/>

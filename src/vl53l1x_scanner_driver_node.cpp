@@ -7,7 +7,20 @@
 #include <algorithm>
 
 #define CALCULATE_INTENSITY(SIGNAL_RATE, AMBIENT_RATE) ( (SIGNAL_RATE) )
-#define ARDUINO_INPUT_STRING_SIZE (96)
+
+// Arduino constants <-> Driver constants
+#define VL53L1X_DEVICE_ADDR               (0x52)
+#define VL53L1X_WIRE_CLOCK                (400000)
+#define VL53L1X_ROI_MINCENTERED_TOPLEFTX  (6)
+#define VL53L1X_ROI_MINCENTERED_TOPLEFTY  (9) // 15
+#define VL53L1X_ROI_MINCENTERED_BOTRIGHTX (9)
+#define VL53L1X_ROI_MINCENTERED_BOTRIGHTY (6) // 0
+#define VERTICAL_POS_BIAS                 (-6)
+#define ARDUINO_SERIAL_BAUD_RATE          (9600)
+#define ARDUINO_INPUT_STRING_SIZE         (96)
+#define SCAN_MODE_2D                      (1)
+#define SCAN_MODE_3D                      (2)
+#define SCAN_MODE_CAMERA                  (3)
 
 union PC_DATA_t
 {
@@ -31,7 +44,6 @@ bool laser_scan_direction;
 
 // Hardware specific
 std::string scanner_serial_port = "/dev/ttyACM0";
-int scanner_serial_baud_rate = 9600;
 double stepper_horizontal_angle_per_step = 0.003067962; // pi/1024 TODO
 double laser_vertical_angle_per_roi_cell = 0.035; // TODO
 double laser_range_min = 0.0;
@@ -57,7 +69,7 @@ int laser_roi_botrighty = 6;
 int laser_distance_mode = 3; // ADAPTIVE(0), short(1), medium(2), long(3)
 int laser_measurement_timing_budget_micro_seconds = 500000;
 int laser_inter_measurement_period_milli_seconds = 50;
-int scanner_3d_mode = 1;
+int scanner_mode = 1;
 int scanner_3d_vertical_steps_per_scan = 1;
 int scanner_horizontal_steps_per_scan = 20;
 int scanner_rewind = 1;
@@ -80,7 +92,6 @@ int main (int argc, char** argv)
 
     // Hardware specific
     priv_nh.param("scanner_serial_port", scanner_serial_port, scanner_serial_port);
-    priv_nh.param("scanner_serial_baud_rate", scanner_serial_baud_rate, scanner_serial_baud_rate);
     priv_nh.param("stepper_horizontal_angle_per_step", stepper_horizontal_angle_per_step, stepper_horizontal_angle_per_step);
     priv_nh.param("laser_vertical_angle_per_roi_cell", laser_vertical_angle_per_roi_cell, laser_vertical_angle_per_roi_cell);
     priv_nh.param("laser_range_min", laser_range_min, laser_range_min);
@@ -104,13 +115,17 @@ int main (int argc, char** argv)
     priv_nh.param("laser_distance_mode", laser_distance_mode, laser_distance_mode);
     priv_nh.param("laser_measurement_timing_budget_micro_seconds", laser_measurement_timing_budget_micro_seconds, laser_measurement_timing_budget_micro_seconds);
     priv_nh.param("laser_inter_measurement_period_milli_seconds", laser_inter_measurement_period_milli_seconds, laser_inter_measurement_period_milli_seconds);
-    priv_nh.param("scanner_3d_mode", scanner_3d_mode, scanner_3d_mode);
+    priv_nh.param("scanner_mode", scanner_mode, scanner_mode);
     priv_nh.param("scanner_3d_vertical_steps_per_scan", scanner_3d_vertical_steps_per_scan, scanner_3d_vertical_steps_per_scan);
     priv_nh.param("scanner_horizontal_steps_per_scan", scanner_horizontal_steps_per_scan, scanner_horizontal_steps_per_scan);
     priv_nh.param("scanner_rewind", scanner_rewind, scanner_rewind);
     priv_nh.param("scanner_calibration_max_value", scanner_calibration_max_value, scanner_calibration_max_value);
 
-    if (scanner_3d_mode)
+    switch (scanner_mode)
+    {
+
+    }
+    if (scanner_mode)
     {
         pc_pub = nh.advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2);
     }
@@ -122,7 +137,7 @@ int main (int argc, char** argv)
     try
     {
         ser.setPort(scanner_serial_port);
-        ser.setBaudrate(scanner_serial_baud_rate);
+        ser.setBaudrate(ARDUINO_SERIAL_BAUD_RATE);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
         ser.open();
@@ -163,7 +178,7 @@ int main (int argc, char** argv)
         {
             ROS_WARN("%s", line);
         }
-        else if (scanner_3d_mode)
+        else if (scanner_mode)
         {
             ROS_ERROR("%s", line);
             process3D(line);
@@ -181,6 +196,7 @@ int main (int argc, char** argv)
 
 void sendParameters()
 {
+    /*
     sprintf(write_buffer, "I %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",   stepper_pin_1, \
                                                                                             stepper_pin_2, \
                                                                                             stepper_pin_3, \
@@ -195,12 +211,14 @@ void sendParameters()
                                                                                             laser_distance_mode, \
                                                                                             laser_measurement_timing_budget_micro_seconds, \
                                                                                             laser_inter_measurement_period_milli_seconds, \
-                                                                                            scanner_3d_mode, \
+                                                                                            scanner_mode, \
                                                                                             scanner_3d_vertical_steps_per_scan, \
                                                                                             scanner_horizontal_steps_per_scan, \
                                                                                             scanner_rewind, \
                                                                                             scanner_calibration_max_value);
-    //ROS_INFO("WRITE: %s", write_buffer);
+    */
+    sprintf(write_buffer, "I\n");
+    ROS_INFO("WRITE CHARS: %d", strlen(write_buffer));
     if (strlen(write_buffer)+1 > ARDUINO_INPUT_STRING_SIZE)
     {
         ROS_FATAL("OVERFLOW ARDUINO_INPUT_STRING_SIZE!");
