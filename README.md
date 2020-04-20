@@ -24,8 +24,7 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 - 2D and 3D scanning mode (~1500 step in horizontal ~270 deg fov / 13 step in vertical ~27 deg fov)
 - Resets stepper motor position to 0 when the driver is terminated
 - (TODO) Depth camera mode
-- (TODO) Fixes optical array center misalignment automatically [(See section 2.8) ](https://www.st.com/resource/en/datasheet/vl53l1x.pdf)
-
+- (TODO) Fixes optical array center misalignment automatically [(See section 2.8)](https://www.st.com/resource/en/datasheet/vl53l1x.pdf)
 - (TODO) Adaptive parameters (Smart Measurement)
   
   - Adaptive Signal Power
@@ -43,6 +42,7 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
   - dataset_Y: measurements with accurate parameters
 - (TODO) Stepper One Phase/Two Phase Mode
 - (TODO) Stepper Half Step Mode
+- (TODO) Laser data correction with odom from imu
 
 
 

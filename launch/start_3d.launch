@@ -8,7 +8,7 @@
         <param name="scanner_serial_baud_rate" value="9600"/>
         <param name="stepper_horizontal_angle_per_step" value="0.003067962"/>
         <param name="laser_vertical_angle_per_roi_cell" value="0.035"/>
-        <param name="laser_range_min" value="0.0"/>
+        <param name="laser_range_min" value="0.04"/>
         <param name="laser_range_max" value="4.0"/>
 
         <!-- ===== [ROS PARAMETERS] ===== -->
