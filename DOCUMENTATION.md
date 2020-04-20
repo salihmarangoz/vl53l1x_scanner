@@ -4,9 +4,7 @@
 
 
 
-## 1. Adaptive Methods
-
-### 1.1 Adaptive Scan Resolution
+### 1. Adaptive Scan Resolution
 
 Optimizes angle between scans based on the previous single measurement. 
 
@@ -35,9 +33,11 @@ Optimizes angle between scans based on the previous single measurement.
 
 ![adaptive_res_3](img/adaptive_res_3.png)
 
+**Note:**
 
+Actually, I have tried predicting orientation of the wall to guess the direction of next measurement, but it failed. To explain it, firstly, rapid changes in the measurements caused fluctuations in guessed orientation of walls. Secondly, I have solved this issue with applying exponentially weighted averages on to the guess of wall orientation, but this caused overshoot at the end of walls. As a result, I have quit working with orientation predictions and came with this idea which is simpler and faster.
 
-TODO:
+**TODO:**
 
 ```c
 //float coef[2] = {0.03036822, -0.00032111}; // 3cm
@@ -59,15 +59,22 @@ Serial.println(target_step);
 
 
 
-## 5. Notes
+## 2. PointCloud Calculation
+
+- Math calculation for measurement to pointcloud conversion:
+
+![pointcloud_calculation](img/pointcloud_calculation.png)
+
+
+
+
+
+## Notes
 
 - Stepper motor delay set as 2.25ms instead of 2ms, because it was missing steps.
 - Stepper motor phase set as 1 instead of 2, because torque was enough.
 - (TODO) 28BYJ-48 steps per revolution is 2048 instead of 2038.
 
-- Math calculation for measurement to pointcloud conversion:
-
-![pointcloud_calculation](img/pointcloud_calculation.png)
 
 - Intensity value is equal to `signal_rate` (This may change in the future)
 
