@@ -1,0 +1,6 @@
+res_{desired}^2 = dist_{PrevScan}^2 + dist_{NextScan}^2 - 2*dist_{PrevScan}*dist_{NextScan}*cos(\theta_{Angle To Next Scan})
+\\
+Assuming:dist_{NextScan} = dist_{PrevScan}
+\\
+\theta_{Angle To Next Scan} = arccos(1.0 - \frac{resolution_{desired}^2}{2*dist_{PrevScan}^2} )
+

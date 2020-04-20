@@ -154,21 +154,7 @@ $ roslaunch vl53l1x_scanner rviz.launch
 
 
 
-## 5. Notes
-
-- Stepper motor delay set as 2.25ms instead of 2ms, because it was missing steps.
-- Stepper motor phase set as 1 instead of 2, because torque was enough.
-- (TODO) 28BYJ-48 steps per revolution is 2048 instead of 2038.
-
-- Math calculation for measurement to pointcloud conversion:
-
-![pointcloud_calculation](img/pointcloud_calculation.png)
-
-- Intensity value is equal to `signal_rate` (This may change in the future)
-
-
-
-## 6. References
+## 5. References
 
 - Stepper Driver Documentation: http://eeshop.unl.edu/pdf/Stepper+Driver.pdf
 - VL53L1X ROI Documentation: https://www.st.com/resource/en/application_note/dm00516219-using-the-programmable-region-of-interest-roi-with-the-vl53l1x-stmicroelectronics.pdf
