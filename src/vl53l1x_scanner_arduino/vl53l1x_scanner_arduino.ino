@@ -115,9 +115,7 @@ void scan3D()
 {
   for (int i=0; i<13; i+=p_scanner_3d_vertical_steps_per_scan)
   {
-    // i+VERTICAL_POS_BIAS
-    //roiConfig.TopLeftY=i+3;
-    //roiConfig.BotRightY=i;
+    measureDistance(stepper_pos, i+LASER_VERTICAL_POS_BIAS, true, p_laser_roi_topleftx, i+3, p_laser_roi_botrightx, i);
   }
 }
 

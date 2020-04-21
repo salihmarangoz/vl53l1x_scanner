@@ -112,12 +112,15 @@ void processInput()
         switch (p_scanner_mode)
         {
             case SCAN_MODE_2D_LASERSCAN:
+                ROS_INFO(line);
                 process2D(line);
                 break;
             case SCAN_MODE_2D_POINTCLOUD:
+                ROS_INFO(line);
                 process3D(line);
                 break;
             case SCAN_MODE_3D_POINTCLOUD:
+                ROS_INFO(line);
                 process3D(line);
                 break;
             case SCAN_MODE_CAM_DEPTHIMAGE:
@@ -203,7 +206,7 @@ void process2D(char *line)
         if (laser_scan.ranges.size() > 0 && ros::ok())
         {
             t_stop = ros::Time::now();
-            ROS_INFO_STREAM("Full-Scan period: " << t_stop-t_start);
+            ROS_WARN_STREAM("Full-Scan period: " << t_stop-t_start);
 
             // Fix data
             if (!laser_scan_direction)
@@ -260,7 +263,7 @@ void process3D(char *line)
         if (pc_scan.data.size() > 0 && ros::ok())
         {
             t_stop = ros::Time::now();
-            ROS_INFO_STREAM("Full-Scan period: " << t_stop-t_start);
+            ROS_WARN_STREAM("Full-Scan period: " << t_stop-t_start);
 
             // Publish data
             if (!is_pc_pub_advertised)
