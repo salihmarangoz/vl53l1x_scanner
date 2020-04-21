@@ -1,19 +1,7 @@
 #include <Wire.h>
 #include "vl53l1_api.h"
-
-// Arduino constants <-> Driver constants
-#define VL53L1X_DEVICE_ADDR               (0x52)
-#define VL53L1X_WIRE_CLOCK                (400000)
-#define VL53L1X_ROI_MINCENTERED_TOPLEFTX  (6)
-#define VL53L1X_ROI_MINCENTERED_TOPLEFTY  (9) // 15
-#define VL53L1X_ROI_MINCENTERED_BOTRIGHTX (9)
-#define VL53L1X_ROI_MINCENTERED_BOTRIGHTY (6) // 0
-#define VERTICAL_POS_BIAS                 (-6)
-#define ARDUINO_SERIAL_BAUD_RATE          (9600)
-#define ARDUINO_INPUT_STRING_SIZE         (96)
-#define SCAN_MODE_2D                      (1)
-#define SCAN_MODE_3D                      (2)
-#define SCAN_MODE_CAMERA                  (3)
+#define __IT_IS_THE_SCANNER__
+#include "shared_conf.h"
 
 //-------------------- GLOBAL VARIABLES ---------------------------------------
 VL53L1_Dev_t sensor;
@@ -22,30 +10,11 @@ VL53L1_RangingMeasurementData_t rangingData;
 int stepper_pos = 0; // managed by oneStep and calibration section
 bool is_active = false;
 bool is_initialized = false;
+bool is_first_scan_received = false;
 char* input_string;
 int input_size = 0;
 int scanner_direction = 1;
-
-//------------------- PARAMETERS (in order) ----------------------------------
-int stepper_pins[4] = {9,10,11,12};
-int stepper_delay = 2250; // my stepper motor misses step with 2000. So I added extra 250
-int stepper_step_min = -512;
-int stepper_step_max = +512;
-int laser_roi_topleftx = VL53L1X_ROI_MINCENTERED_TOPLEFTX;
-int laser_roi_toplefty = VL53L1X_ROI_MINCENTERED_TOPLEFTY;
-int laser_roi_botrightx = VL53L1X_ROI_MINCENTERED_BOTRIGHTX;
-int laser_roi_botrighty = VL53L1X_ROI_MINCENTERED_BOTRIGHTY;
-int laser_distance_mode = 3; // short(1), medium(2), long(3)
-long laser_measurement_timing_budget_micro_seconds = 10000;
-int laser_inter_measurement_period_milli_seconds = 1;
-int scanner_mode = 1;
-int scanner_3d_vertical_steps_per_scan = 1;
-int scanner_horizontal_steps_per_scan = 32;
-int scanner_rewind = 0;
-int scanner_calibration_max_value = 500;
-
-
-
+int desired_step = 0;
 
 //==============================================================================
 //=== SETUP & LOOP =============================================================
@@ -81,13 +50,14 @@ void loop()
 void actionState()
 {
     // REWIND
-    if (scanner_rewind && stepper_pos >= stepper_step_max)
+    if (p_scanner_rewind && stepper_pos >= p_stepper_step_max)
     { 
       Serial.println(F("$+")); // FULL SCAN HEADER
-      stepperStep(-stepper_pos+stepper_step_min, stepper_delay);
+      is_first_scan_received = false;
+      stepperStep(-stepper_pos+p_stepper_step_min, p_stepper_delay);
     } 
     // CHANGE DIRECTION
-    else if ( !scanner_rewind && ((stepper_pos >= stepper_step_max && scanner_direction > 0) || (stepper_pos <= stepper_step_min && scanner_direction < 0)) )
+    else if ( !p_scanner_rewind && ((stepper_pos >= p_stepper_step_max && scanner_direction > 0) || (stepper_pos <= p_stepper_step_min && scanner_direction < 0)) )
     {
       Serial.print(F("$")); // FULL SCAN HEADER
       scanner_direction = -scanner_direction;
@@ -98,18 +68,36 @@ void actionState()
     }
     else
     {
-      stepperStep(scanner_direction*scanner_horizontal_steps_per_scan, stepper_delay);
+      // default:
+      desired_step = scanner_direction*p_scanner_horizontal_steps_per_scan;
+
+      // adaptive resolution
+      if (p_adaptive_resolution_enable && is_first_scan_received)
+      {
+        float distance = (float(rangingData.RangeMilliMeter)/1000.0);
+        float adaptive_angle = (1.0/distance)*p_adaptive_resolution_coef_0 + p_adaptive_resolution_coef_1;
+        float step_per_angle = 1.0 / p_stepper_horizontal_angle_per_step;
+        float target_step = adaptive_angle * step_per_angle;
+        if (abs(int(target_step)) <= 0)
+          target_step = 1;
+        desired_step = abs(int(target_step)) * scanner_direction;
+        Serial.print("# desired_step ");
+        Serial.println(desired_step);
+      }
+      
+      stepperStep(desired_step, p_stepper_delay);
     }
 }
 
 
 void scanState()
 {
-  switch (scanner_mode)
+  switch (p_scanner_mode)
   {
-    case 1: scan2D(); break;
-    case 2: scan3D(); break;
-    case 3: /*camera*/ break;
+    case SCAN_MODE_2D_LASERSCAN: scan2D(); break;
+    case SCAN_MODE_2D_POINTCLOUD: scan2D(); break;
+    case SCAN_MODE_3D_POINTCLOUD: scan3D(); break;
+    case SCAN_MODE_CAM_DEPTHIMAGE: scan3D(); break;
     default: Serial.println(F("# ERROR: Unknown scanner_mode"));
   }
 }
@@ -125,12 +113,17 @@ void scan2D()
 
 void scan3D()
 {
-  for (int i=0; i<13; i+=scanner_3d_vertical_steps_per_scan)
+  for (int i=0; i<13; i+=p_scanner_3d_vertical_steps_per_scan)
   {
     // i+VERTICAL_POS_BIAS
     //roiConfig.TopLeftY=i+3;
     //roiConfig.BotRightY=i;
   }
+}
+
+void scanCamera()
+{
+  
 }
 
 
@@ -153,45 +146,28 @@ void serialEvent()
       input_string[input_size] = '\0';
       ////////// PROCESS INPUT HERE //////////
       // How to use this device: I -> C (optional) -> S -> P
+      // V -> set variables
       // I -> initialize
       // C -> calibration
       // S -> start
       // P -> poweroff
       // Serial.println(input_string); // debug
       char* token = strtok(input_string, " ");
-      
-      if (token[0] == 'I')  // I was unable to use switch statement here. It didn't work and I don't know why
+
+      if (token[0] == 'V') // I was unable to use switch statement here. It didn't work and I don't know why
+      {
+        static bool first_time = true;
+        if (first_time)
+        {
+          Serial.println(F("# ===== SET VARIABLE COMMAND ====="));
+          first_time = false;
+        }
+        token = strtok(NULL, " ");
+        PROCESS_PARAMETER(atoi(token));
+      }
+      else if (token[0] == 'I')  
       {
         Serial.println(F("# ===== INITIALIZE COMMAND ====="));
-        Serial.println(F("# [Read Parameters]"));
-
-#define INITIALIZE_PARAMETER(a) {if( (token = strtok(NULL, " ")) != NULL ) a = atol(token); Serial.print(F("#   ")); Serial.print(F(#a)); Serial.print(F(": ")); Serial.println((a));}
-        
-        // Stepper Motor Parameters
-        /*INITIALIZE_PARAMETER(stepper_pins[0]);
-        INITIALIZE_PARAMETER(stepper_pins[1]);
-        INITIALIZE_PARAMETER(stepper_pins[2]);
-        INITIALIZE_PARAMETER(stepper_pins[3]);
-        INITIALIZE_PARAMETER(stepper_delay);
-        INITIALIZE_PARAMETER(stepper_step_min);
-        INITIALIZE_PARAMETER(stepper_step_max);
-        // Laser Parameters
-        INITIALIZE_PARAMETER(laser_roi_topleftx);
-        INITIALIZE_PARAMETER(laser_roi_toplefty);
-        INITIALIZE_PARAMETER(laser_roi_botrightx);
-        INITIALIZE_PARAMETER(laser_roi_botrighty);
-        INITIALIZE_PARAMETER(laser_distance_mode);
-        INITIALIZE_PARAMETER(laser_measurement_timing_budget_micro_seconds);
-        INITIALIZE_PARAMETER(laser_inter_measurement_period_milli_seconds);
-        // Scanner Parameters
-        
-        INITIALIZE_PARAMETER(scanner_mode);
-        INITIALIZE_PARAMETER(scanner_3d_vertical_steps_per_scan);
-        INITIALIZE_PARAMETER(scanner_horizontal_steps_per_scan);
-        INITIALIZE_PARAMETER(scanner_rewind);
-        INITIALIZE_PARAMETER(scanner_calibration_max_value);
-        */
-        
         initialize_hardware();
       }
       else if (token[0] == 'C')
@@ -199,15 +175,15 @@ void serialEvent()
         Serial.println(F("# ===== CALIBRATION COMMAND ====="));
         token = strtok(NULL, " ");
         int calib_command = atoi(token);
-        if (calib_command > scanner_calibration_max_value) calib_command = scanner_calibration_max_value;
-        if (calib_command < -scanner_calibration_max_value) calib_command = -scanner_calibration_max_value;
-        stepperStep(calib_command, stepper_delay);
+        if (calib_command > p_scanner_calibration_max_value) calib_command = p_scanner_calibration_max_value;
+        if (calib_command < -p_scanner_calibration_max_value) calib_command = -p_scanner_calibration_max_value;
+        stepperStep(calib_command, p_stepper_delay);
         stepper_pos = 0;
       }
       else if (token[0] == 'S')
       {
         Serial.println(F("# ===== START COMMAND ====="));
-        stepperStep(stepper_step_min, stepper_delay); // bring stepper to pos 0
+        stepperStep(p_stepper_step_min, p_stepper_delay); // bring stepper to pos 0
         is_active = true;
         Serial.println("$+"); // FULL SCAN HEADER
       }
@@ -215,11 +191,11 @@ void serialEvent()
       {
         Serial.println(F("# ===== SHUTDOWN COMMAND ====="));
         is_active = false;
-        stepperStep(-stepper_pos, stepper_delay); // bring stepper to pos 0
-        digitalWrite(stepper_pins[0], LOW);
-        digitalWrite(stepper_pins[1], LOW);
-        digitalWrite(stepper_pins[2], LOW);
-        digitalWrite(stepper_pins[3], LOW);
+        stepperStep(-stepper_pos, p_stepper_delay); // bring stepper to pos 0
+        digitalWrite(p_stepper_pin_1, LOW);
+        digitalWrite(p_stepper_pin_2, LOW);
+        digitalWrite(p_stepper_pin_3, LOW);
+        digitalWrite(p_stepper_pin_4, LOW);
       }
       
       ////////////////////////////////////////
@@ -232,31 +208,33 @@ void serialEvent()
 
 
 void initialize_hardware()
-{
+{  
   Serial.println(F("# [Init Hardware]"));
   // Initialize Stepper
-  Serial.println(F("#   Initializing Stepper..."));
-  pinMode(stepper_pins[0], OUTPUT);
-  pinMode(stepper_pins[1], OUTPUT);
-  pinMode(stepper_pins[2], OUTPUT);
-  pinMode(stepper_pins[3], OUTPUT);
+  Serial.println(F("#   Initializing Stepper"));
+  delay(100);
+  pinMode(p_stepper_pin_1, OUTPUT);
+  pinMode(p_stepper_pin_2, OUTPUT);
+  pinMode(p_stepper_pin_3, OUTPUT);
+  pinMode(p_stepper_pin_4, OUTPUT);
 
   // Initialize VL53L1X
-  Serial.println(F("#   Initializing VL53L1X..."));
+  Serial.println(F("#   Initializing VL53L1X"));
+  delay(100);
   Wire.begin();
-  Wire.setClock(VL53L1X_WIRE_CLOCK);
-  sensor.I2cDevAddr   = VL53L1X_DEVICE_ADDR;
-  roiConfig.TopLeftX  = laser_roi_topleftx;
-  roiConfig.TopLeftY  = laser_roi_toplefty; //9
-  roiConfig.BotRightX = laser_roi_botrightx;
-  roiConfig.BotRightY = laser_roi_botrighty; // 6
+  Wire.setClock(LASER_WIRE_CLOCK);
+  sensor.I2cDevAddr   = LASER_DEVICE_ADDR;
+  roiConfig.TopLeftX  = p_laser_roi_topleftx;
+  roiConfig.TopLeftY  = p_laser_roi_toplefty; //9
+  roiConfig.BotRightX = p_laser_roi_botrightx;
+  roiConfig.BotRightY = p_laser_roi_botrighty; // 6
   check( VL53L1_software_reset(&sensor) );
   check( VL53L1_WaitDeviceBooted(&sensor) );
   check( VL53L1_DataInit(&sensor) );
   check( VL53L1_StaticInit(&sensor) );
-  check( VL53L1_SetDistanceMode(&sensor, laser_distance_mode) ); // VL53L1_DISTANCEMODE_LONG
-  check( VL53L1_SetMeasurementTimingBudgetMicroSeconds(&sensor, laser_measurement_timing_budget_micro_seconds) ); // 50000
-  check( VL53L1_SetInterMeasurementPeriodMilliSeconds(&sensor, laser_inter_measurement_period_milli_seconds) ); // 50
+  check( VL53L1_SetDistanceMode(&sensor, p_laser_distance_mode) ); // VL53L1_DISTANCEMODE_LONG
+  check( VL53L1_SetMeasurementTimingBudgetMicroSeconds(&sensor, p_laser_measurement_timing_budget_micro_seconds) ); // 50000
+  check( VL53L1_SetInterMeasurementPeriodMilliSeconds(&sensor, p_laser_inter_measurement_period_milli_seconds) ); // 50
   check( VL53L1_SetUserROI(&sensor, &roiConfig) );
   check( VL53L1_StartMeasurement(&sensor) );
 
@@ -329,6 +307,8 @@ void measureDistance(int horizontal_pos, int vertical_pos, bool update_roi, int 
   Serial.print(rangingData.SignalRateRtnMegaCps/65536.0);
   Serial.print(F(" "));
   Serial.println(rangingData.AmbientRateRtnMegaCps/65336.0);
+
+  is_first_scan_received = true;
 }
 
 //==============================================================================
@@ -355,28 +335,28 @@ void oneStep(bool dir, unsigned long delay_time){
     switch(step_number)
     {
       case 0:
-      digitalWrite(stepper_pins[0], LOW);
-      digitalWrite(stepper_pins[1], LOW);
-      digitalWrite(stepper_pins[2], LOW);
-      digitalWrite(stepper_pins[3], HIGH);
+      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_4, HIGH);
       break;
       case 1:
-      digitalWrite(stepper_pins[0], LOW);
-      digitalWrite(stepper_pins[1], LOW);
-      digitalWrite(stepper_pins[2], HIGH);
-      digitalWrite(stepper_pins[3], LOW);
+      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_3, HIGH);
+      digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 2:
-      digitalWrite(stepper_pins[0], LOW);
-      digitalWrite(stepper_pins[1], HIGH);
-      digitalWrite(stepper_pins[2], LOW);
-      digitalWrite(stepper_pins[3], LOW);
+      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_2, HIGH);
+      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 3:
-      digitalWrite(stepper_pins[0], HIGH);
-      digitalWrite(stepper_pins[1], LOW);
-      digitalWrite(stepper_pins[2], LOW);
-      digitalWrite(stepper_pins[3], LOW);
+      digitalWrite(p_stepper_pin_1, HIGH);
+      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_4, LOW);
     } 
   }
   else
@@ -385,28 +365,28 @@ void oneStep(bool dir, unsigned long delay_time){
     switch(step_number)
     {
       case 0:
-      digitalWrite(stepper_pins[0], HIGH);
-      digitalWrite(stepper_pins[1], LOW);
-      digitalWrite(stepper_pins[2], LOW);
-      digitalWrite(stepper_pins[3], LOW);
+      digitalWrite(p_stepper_pin_1, HIGH);
+      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 1:
-      digitalWrite(stepper_pins[0], LOW);
-      digitalWrite(stepper_pins[1], HIGH);
-      digitalWrite(stepper_pins[2], LOW);
-      digitalWrite(stepper_pins[3], LOW);
+      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_2, HIGH);
+      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 2:
-      digitalWrite(stepper_pins[0], LOW);
-      digitalWrite(stepper_pins[1], LOW);
-      digitalWrite(stepper_pins[2], HIGH);
-      digitalWrite(stepper_pins[3], LOW);
+      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_3, HIGH);
+      digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 3:
-      digitalWrite(stepper_pins[0], LOW);
-      digitalWrite(stepper_pins[1], LOW);
-      digitalWrite(stepper_pins[2], LOW);
-      digitalWrite(stepper_pins[3], HIGH);
+      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_4, HIGH);
       break;
     } 
   }

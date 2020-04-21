@@ -6,21 +6,10 @@
 #include <vector>
 #include <algorithm>
 
-#define CALCULATE_INTENSITY(SIGNAL_RATE, AMBIENT_RATE) ( (SIGNAL_RATE) )
+#define __IT_IS_THE_COMPUTER__
+#include "vl53l1x_scanner_arduino/shared_conf.h"
 
-// Arduino constants <-> Driver constants
-#define VL53L1X_DEVICE_ADDR               (0x52)
-#define VL53L1X_WIRE_CLOCK                (400000)
-#define VL53L1X_ROI_MINCENTERED_TOPLEFTX  (6)
-#define VL53L1X_ROI_MINCENTERED_TOPLEFTY  (9) // 15
-#define VL53L1X_ROI_MINCENTERED_BOTRIGHTX (9)
-#define VL53L1X_ROI_MINCENTERED_BOTRIGHTY (6) // 0
-#define VERTICAL_POS_BIAS                 (-6)
-#define ARDUINO_SERIAL_BAUD_RATE          (9600)
-#define ARDUINO_INPUT_STRING_SIZE         (96)
-#define SCAN_MODE_2D                      (1)
-#define SCAN_MODE_3D                      (2)
-#define SCAN_MODE_CAMERA                  (3)
+#define CALCULATE_INTENSITY(SIGNAL_RATE, AMBIENT_RATE) ( (SIGNAL_RATE) )
 
 union PC_DATA_t
 {
@@ -40,103 +29,52 @@ ros::Publisher pc_pub;
 sensor_msgs::LaserScan laser_scan;
 sensor_msgs::PointCloud2 pc_scan; 
 bool laser_scan_direction;
+ros::NodeHandle *priv_nh;
 
+// All parameters are located in shared_conf.h
+// Other parameters
+std::string     p_scanner_serial_port = "/dev/ttyACM0";
+std::string     p_laserscan_frame = "laser";
 
-// Hardware specific
-std::string scanner_serial_port = "/dev/ttyACM0";
-double stepper_horizontal_angle_per_step = 0.003067962; // pi/1024 TODO
-double laser_vertical_angle_per_roi_cell = 0.035; // TODO
-double laser_range_min = 0.0;
-double laser_range_max = 4.0; // TODO
-
-
-// ROS specific
-std::string laserscan_frame = "laser";
-
-
-// Scanner specific
-int stepper_pin_1 = 9;
-int stepper_pin_2 = 10;
-int stepper_pin_3 = 11;
-int stepper_pin_4 = 12;
-int stepper_delay = 2250; // my stepper motor misses step with 2000. So I added extra 250
-int stepper_step_min = -300;
-int stepper_step_max = +300;
-int laser_roi_topleftx = 6;
-int laser_roi_toplefty = 9;
-int laser_roi_botrightx = 9;
-int laser_roi_botrighty = 6;
-int laser_distance_mode = 3; // ADAPTIVE(0), short(1), medium(2), long(3)
-int laser_measurement_timing_budget_micro_seconds = 500000;
-int laser_inter_measurement_period_milli_seconds = 50;
-int scanner_mode = 1;
-int scanner_3d_vertical_steps_per_scan = 1;
-int scanner_horizontal_steps_per_scan = 20;
-int scanner_rewind = 1;
-int scanner_calibration_max_value = 500;
-
-
+void initialize();
 void sendParameters();
 void startScanning();
-void stopScanning();
+void shutdownDevice();
 char* readLineFromDevice();
 void process2D(char *line);
 void process3D(char *line);
+void processInput();
 
 
 int main (int argc, char** argv)
 {
     ros::init(argc, argv, "vl53l1x_scanner_driver_node");
     ros::NodeHandle nh;
-    ros::NodeHandle priv_nh("~");
 
-    // Hardware specific
-    priv_nh.param("scanner_serial_port", scanner_serial_port, scanner_serial_port);
-    priv_nh.param("stepper_horizontal_angle_per_step", stepper_horizontal_angle_per_step, stepper_horizontal_angle_per_step);
-    priv_nh.param("laser_vertical_angle_per_roi_cell", laser_vertical_angle_per_roi_cell, laser_vertical_angle_per_roi_cell);
-    priv_nh.param("laser_range_min", laser_range_min, laser_range_min);
-    priv_nh.param("laser_range_max", laser_range_max, laser_range_max);
+    priv_nh = new ros::NodeHandle("~"); // used in shared_conf.h
+    priv_nh->param("scanner_serial_port", p_scanner_serial_port, p_scanner_serial_port);
+    priv_nh->param("laserscan_frame", p_laserscan_frame, p_laserscan_frame);
 
-    // ROS specific
-    priv_nh.param("laserscan_frame", laserscan_frame, laserscan_frame);
-
-    // Scanner specific (will be sent to the scanner)
-    priv_nh.param("stepper_pin_1", stepper_pin_1, stepper_pin_1);
-    priv_nh.param("stepper_pin_2", stepper_pin_2, stepper_pin_2);
-    priv_nh.param("stepper_pin_3", stepper_pin_3, stepper_pin_3);
-    priv_nh.param("stepper_pin_3", stepper_pin_3, stepper_pin_3);
-    priv_nh.param("stepper_delay", stepper_delay, stepper_delay);
-    priv_nh.param("stepper_step_min", stepper_step_min, stepper_step_min);
-    priv_nh.param("stepper_step_max", stepper_step_max, stepper_step_max);
-    priv_nh.param("laser_roi_topleftx", laser_roi_topleftx, laser_roi_topleftx);
-    priv_nh.param("laser_roi_toplefty", laser_roi_toplefty, laser_roi_toplefty);
-    priv_nh.param("laser_roi_botrightx", laser_roi_botrightx, laser_roi_botrightx);
-    priv_nh.param("laser_roi_botrighty", laser_roi_botrighty, laser_roi_botrighty);
-    priv_nh.param("laser_distance_mode", laser_distance_mode, laser_distance_mode);
-    priv_nh.param("laser_measurement_timing_budget_micro_seconds", laser_measurement_timing_budget_micro_seconds, laser_measurement_timing_budget_micro_seconds);
-    priv_nh.param("laser_inter_measurement_period_milli_seconds", laser_inter_measurement_period_milli_seconds, laser_inter_measurement_period_milli_seconds);
-    priv_nh.param("scanner_mode", scanner_mode, scanner_mode);
-    priv_nh.param("scanner_3d_vertical_steps_per_scan", scanner_3d_vertical_steps_per_scan, scanner_3d_vertical_steps_per_scan);
-    priv_nh.param("scanner_horizontal_steps_per_scan", scanner_horizontal_steps_per_scan, scanner_horizontal_steps_per_scan);
-    priv_nh.param("scanner_rewind", scanner_rewind, scanner_rewind);
-    priv_nh.param("scanner_calibration_max_value", scanner_calibration_max_value, scanner_calibration_max_value);
-
-    switch (scanner_mode)
+    switch (p_scanner_mode)
     {
-
-    }
-    if (scanner_mode)
-    {
-        pc_pub = nh.advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2);
-    }
-    else
-    {
-        laser_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 2);
+        case SCAN_MODE_2D_LASERSCAN:
+            laser_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 2);
+            break;
+        case SCAN_MODE_2D_POINTCLOUD:
+            pc_pub = nh.advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2);
+            break;
+        case SCAN_MODE_3D_POINTCLOUD:
+            pc_pub = nh.advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2);
+            break;
+        case SCAN_MODE_CAM_DEPTHIMAGE:
+            /*TODO*/
+            break;
     }
 
+    // Open serial port
     try
     {
-        ser.setPort(scanner_serial_port);
+        ser.setPort(p_scanner_serial_port);
         ser.setBaudrate(ARDUINO_SERIAL_BAUD_RATE);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
@@ -147,7 +85,6 @@ int main (int argc, char** argv)
         ROS_ERROR_STREAM("Unable to open port ");
         return -1;
     }
-
     if(ser.isOpen())
     {
         ROS_INFO_STREAM("Serial Port initialized");
@@ -156,73 +93,71 @@ int main (int argc, char** argv)
     }
 
     // Flush old buffer
-    while(ser.available())
-    {
-        ser.read(1)[0];
-    }
+    while(ser.available()) ser.read(1)[0]; 
 
+    // Send Parameters -> Initialize the Device -> Start Scanning
     ros::Duration(3.0).sleep(); // Wait for arduino
-
     sendParameters();
-
     ros::Duration(1.0).sleep(); // Wait for parameter responses
-
+    initialize();
+    ros::Duration(1.0).sleep(); // Wait for initialization
     startScanning();
 
     while (ros::ok())
     {
-        char *line = readLineFromDevice();
-        if (line == NULL) continue;
-
-        if (line[0] == '#')
-        {
-            ROS_WARN("%s", line);
-        }
-        else if (scanner_mode)
-        {
-            ROS_ERROR("%s", line);
-            process3D(line);
-        }
-        else
-        {
-            ROS_ERROR("%s", line);
-            process2D(line);
-        }
+        processInput();
     }
 
-    stopScanning();
+    shutdownDevice();
 
+}
+
+void processInput()
+{
+    char *line = readLineFromDevice();
+    if (line == NULL) return;
+    if (line[0] == '#')
+    {
+        ROS_WARN("%s", line);
+    }
+    else
+    {
+        switch (p_scanner_mode)
+        {
+            case SCAN_MODE_2D_LASERSCAN:
+                ROS_ERROR("%s", line);
+                process2D(line);
+                break;
+            case SCAN_MODE_2D_POINTCLOUD:
+                ROS_ERROR("%s", line);
+                process3D(line);
+                break;
+            case SCAN_MODE_3D_POINTCLOUD:
+                ROS_ERROR("%s", line);
+                process3D(line);
+                break;
+            case SCAN_MODE_CAM_DEPTHIMAGE:
+                /*TODO*/
+                break;
+        }
+    }
 }
 
 void sendParameters()
 {
-    /*
-    sprintf(write_buffer, "I %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",   stepper_pin_1, \
-                                                                                            stepper_pin_2, \
-                                                                                            stepper_pin_3, \
-                                                                                            stepper_pin_4, \
-                                                                                            stepper_delay, \
-                                                                                            stepper_step_min, \
-                                                                                            stepper_step_max, \
-                                                                                            laser_roi_topleftx, \
-                                                                                            laser_roi_toplefty, \
-                                                                                            laser_roi_botrightx, \
-                                                                                            laser_roi_botrighty, \
-                                                                                            laser_distance_mode, \
-                                                                                            laser_measurement_timing_budget_micro_seconds, \
-                                                                                            laser_inter_measurement_period_milli_seconds, \
-                                                                                            scanner_mode, \
-                                                                                            scanner_3d_vertical_steps_per_scan, \
-                                                                                            scanner_horizontal_steps_per_scan, \
-                                                                                            scanner_rewind, \
-                                                                                            scanner_calibration_max_value);
-    */
-    sprintf(write_buffer, "I\n");
-    ROS_INFO("WRITE CHARS: %d", strlen(write_buffer));
-    if (strlen(write_buffer)+1 > ARDUINO_INPUT_STRING_SIZE)
+    for (int i=0; i<PROCESS_PARAMETER_SIZE; i++)
     {
-        ROS_FATAL("OVERFLOW ARDUINO_INPUT_STRING_SIZE!");
+        PROCESS_PARAMETER(i);
+        ros::Duration(0.1).sleep(); // need to wait because it causes overflow in arduino
+        processInput();
+        ros::Duration(0.1).sleep(); // need to wait because it causes overflow in arduino
     }
+    processInput();
+}
+
+void initialize()
+{
+    sprintf(write_buffer, "I \n");
     ser.write(write_buffer); // Initialize
     ser.flush();
 }
@@ -233,43 +168,47 @@ void startScanning()
     ser.flush();
 }
 
-void stopScanning()
+void shutdownDevice()
 {
-    ser.write("P\n"); // Shutdown
+    ser.write("P \n"); // Shutdown
     ser.flush();
 }
 
 char* readLineFromDevice()
 {
-    bool is_line_complete = false;
-    int i=0;
-    ros::Rate rate(100);
-    while(ros::ok() && !is_line_complete)
+    if (ser.available())
     {
-        if(ser.available())
+        bool is_line_complete = false;
+        int i=0;
+        ros::Rate rate(100);
+        while(ros::ok() && !is_line_complete)
         {
-            read_buffer[i] = ser.read(1)[0];
-            if (read_buffer[i] == '\n')
+            if(ser.available())
             {
-                read_buffer[i] = '\0';
-                is_line_complete = true;
+                read_buffer[i] = ser.read(1)[0];
+                if (read_buffer[i] == '\n')
+                {
+                    read_buffer[i] = '\0';
+                    is_line_complete = true;
+                }
+                i++;
             }
-            i++;
+            else
+            {
+                rate.sleep();
+            }
+        }
+        if (is_line_complete)
+        {
+            return read_buffer; 
         }
         else
         {
-            rate.sleep();
+            ROS_WARN("Exit interrupt received while reading from device");
+            return NULL;
         }
     }
-    if (is_line_complete)
-    {
-        return read_buffer; 
-    }
-    else
-    {
-        ROS_WARN("Exit interrupt received while reading from device");
-        return NULL;
-    }
+    return NULL;
 }
 
 void process2D(char *line)
@@ -291,14 +230,14 @@ void process2D(char *line)
 
         laser_scan.header.seq = laser_seq++;
         laser_scan.header.stamp = ros::Time::now();
-        laser_scan.header.frame_id = laserscan_frame;
-        laser_scan.angle_min = stepper_horizontal_angle_per_step * stepper_step_min;
-        laser_scan.angle_max = stepper_horizontal_angle_per_step * stepper_step_max;
-        laser_scan.angle_increment = stepper_horizontal_angle_per_step * scanner_horizontal_steps_per_scan;
+        laser_scan.header.frame_id = p_laserscan_frame;
+        laser_scan.angle_min = p_stepper_horizontal_angle_per_step * p_stepper_step_min;
+        laser_scan.angle_max = p_stepper_horizontal_angle_per_step * p_stepper_step_max;
+        laser_scan.angle_increment = p_stepper_horizontal_angle_per_step * p_scanner_horizontal_steps_per_scan;
         laser_scan.time_increment = 0;                                                              // TODO
         laser_scan.scan_time = 0;                                                                   // TODO
-        laser_scan.range_min = laser_range_min;
-        laser_scan.range_max = laser_range_max;
+        laser_scan.range_min = p_laser_range_min;
+        laser_scan.range_max = p_laser_range_max;
         laser_scan.ranges.clear();
         laser_scan.intensities.clear();
     }
@@ -326,7 +265,7 @@ void process3D(char *line)
 
         pc_scan.header.seq = pc_seq++;
         pc_scan.header.stamp = ros::Time::now();
-        pc_scan.header.frame_id = laserscan_frame;
+        pc_scan.header.frame_id = p_laserscan_frame;
 
         // 2D structure of the point cloud. If the cloud is unordered, height is
         // 1 and width is the length of the point cloud.
@@ -360,8 +299,8 @@ void process3D(char *line)
         sscanf(line, "%d %d %d %d %f %f", &horizontal_pos, &vertical_pos, &range, &status, &sig1, &sig2);
 
         float r = ((float)range)/1000.0;
-        float theta = stepper_horizontal_angle_per_step * ((float)horizontal_pos);
-        float beta = laser_vertical_angle_per_roi_cell * ((float)vertical_pos);
+        float theta = p_stepper_horizontal_angle_per_step * ((float)horizontal_pos);
+        float beta = p_laser_vertical_angle_per_roi_cell * ((float)vertical_pos);
 
         PC_DATA_t pc_data;
         pc_data.structured.x = r * cos(beta) * cos(theta);
