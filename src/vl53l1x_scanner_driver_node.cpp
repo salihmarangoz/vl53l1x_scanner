@@ -124,7 +124,8 @@ void processInput()
                 process3D(line);
                 break;
             case SCAN_MODE_CAM_DEPTHIMAGE:
-                /*TODO*/
+                ROS_INFO(line);
+                process3D(line); /*TODO*/
                 break;
         }
     }

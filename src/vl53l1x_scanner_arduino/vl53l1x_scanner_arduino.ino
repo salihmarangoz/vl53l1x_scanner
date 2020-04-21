@@ -49,8 +49,12 @@ void loop()
 
 void actionState()
 {
+    if (p_scanner_mode == SCAN_MODE_CAM_DEPTHIMAGE)
+    {
+      Serial.print(F("$")); // FULL SCAN HEADER
+    }
     // REWIND
-    if (p_scanner_rewind && stepper_pos >= p_stepper_step_max)
+    else if (p_scanner_rewind && stepper_pos >= p_stepper_step_max)
     { 
       Serial.println(F("$+")); // FULL SCAN HEADER
       is_first_scan_received = false;
@@ -97,7 +101,7 @@ void scanState()
     case SCAN_MODE_2D_LASERSCAN: scan2D(); break;
     case SCAN_MODE_2D_POINTCLOUD: scan2D(); break;
     case SCAN_MODE_3D_POINTCLOUD: scan3D(); break;
-    case SCAN_MODE_CAM_DEPTHIMAGE: scan3D(); break;
+    case SCAN_MODE_CAM_DEPTHIMAGE: scanCamera(); break;
     default: Serial.println(F("# ERROR: Unknown scanner_mode"));
   }
 }
@@ -121,7 +125,14 @@ void scan3D()
 
 void scanCamera()
 {
-  
+  for (int i=0; i<13; i+=p_scanner_3d_vertical_steps_per_scan)
+  {
+    for (int j=0; j<13; j+=p_scanner_3d_vertical_steps_per_scan) // TODO!!!!!!
+    {
+      measureDistance(j+LASER_VERTICAL_POS_BIAS, i+LASER_VERTICAL_POS_BIAS, true, j, i+3, j+3, i);
+    }
+    
+  }
 }
 
 
@@ -181,7 +192,8 @@ void serialEvent()
       else if (token[0] == 'S')
       {
         Serial.println(F("# ===== START COMMAND ====="));
-        stepperStep(p_stepper_step_min, p_stepper_delay); // bring stepper to pos 0
+        if (p_scanner_mode != SCAN_MODE_CAM_DEPTHIMAGE)
+          stepperStep(p_stepper_step_min, p_stepper_delay); // bring stepper to pos 0
         is_active = true;
         Serial.println("$+"); // FULL SCAN HEADER
       }
