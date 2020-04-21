@@ -1,6 +1,6 @@
 #include <Wire.h>
 #include "vl53l1_api.h"
-#define __IT_IS_THE_SCANNER__
+#define __THIS_IS_THE_SCANNER__
 #include "shared_conf.h"
 
 //-------------------- GLOBAL VARIABLES ---------------------------------------
@@ -71,8 +71,8 @@ void actionState()
       // default:
       desired_step = scanner_direction*p_scanner_horizontal_steps_per_scan;
 
-      // adaptive resolution
-      if (p_adaptive_resolution_enable && is_first_scan_received)
+      // adaptive resolution (compatible with SCAN_MODE_2D_POINTCLOUD)
+      if (p_adaptive_resolution_enable && is_first_scan_received && p_scanner_mode == SCAN_MODE_2D_POINTCLOUD)
       {
         float distance = (float(rangingData.RangeMilliMeter)/1000.0);
         float adaptive_angle = (1.0/distance)*p_adaptive_resolution_coef_0 + p_adaptive_resolution_coef_1;
@@ -81,10 +81,10 @@ void actionState()
         if (abs(int(target_step)) <= 0)
           target_step = 1;
         desired_step = abs(int(target_step)) * scanner_direction;
-        Serial.print("# desired_step ");
-        Serial.println(desired_step);
       }
-      
+
+      //Serial.print("# desired_step ");
+      //Serial.println(desired_step);
       stepperStep(desired_step, p_stepper_delay);
     }
 }

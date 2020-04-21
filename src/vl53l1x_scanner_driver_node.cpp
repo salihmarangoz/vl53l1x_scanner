@@ -6,7 +6,7 @@
 #include <vector>
 #include <algorithm>
 
-#define __IT_IS_THE_COMPUTER__
+#define __THIS_IS_THE_DRIVER__
 #include "vl53l1x_scanner_arduino/shared_conf.h"
 
 #define CALCULATE_INTENSITY(SIGNAL_RATE, AMBIENT_RATE) ( (SIGNAL_RATE) )
@@ -25,16 +25,19 @@ serial::Serial ser;
 char read_buffer[512];
 char write_buffer[512];
 ros::Publisher laser_pub;
+bool is_laser_pub_advertised = false;
 ros::Publisher pc_pub;
+bool is_pc_pub_advertised = false;
 sensor_msgs::LaserScan laser_scan;
 sensor_msgs::PointCloud2 pc_scan; 
 bool laser_scan_direction;
-ros::NodeHandle *priv_nh;
+ros::NodeHandle *nh, *priv_nh;
+ros::Time t_start, t_stop;
 
-// All parameters are located in shared_conf.h
-// Other parameters
-std::string     p_scanner_serial_port = "/dev/ttyACM0";
-std::string     p_laserscan_frame = "laser";
+// All parameters with prefix "p_" are located in shared_conf.h
+// Other parameters:
+std::string     scanner_serial_port = "/dev/ttyACM0";
+std::string     laserscan_frame = "laser";
 
 void initialize();
 void sendParameters();
@@ -49,32 +52,16 @@ void processInput();
 int main (int argc, char** argv)
 {
     ros::init(argc, argv, "vl53l1x_scanner_driver_node");
-    ros::NodeHandle nh;
+    nh = new ros::NodeHandle();
+    priv_nh = new ros::NodeHandle("~"); // will be used in shared_conf.h
 
-    priv_nh = new ros::NodeHandle("~"); // used in shared_conf.h
-    priv_nh->param("scanner_serial_port", p_scanner_serial_port, p_scanner_serial_port);
-    priv_nh->param("laserscan_frame", p_laserscan_frame, p_laserscan_frame);
-
-    switch (p_scanner_mode)
-    {
-        case SCAN_MODE_2D_LASERSCAN:
-            laser_pub = nh.advertise<sensor_msgs::LaserScan>("scan", 2);
-            break;
-        case SCAN_MODE_2D_POINTCLOUD:
-            pc_pub = nh.advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2);
-            break;
-        case SCAN_MODE_3D_POINTCLOUD:
-            pc_pub = nh.advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2);
-            break;
-        case SCAN_MODE_CAM_DEPTHIMAGE:
-            /*TODO*/
-            break;
-    }
+    priv_nh->param("scanner_serial_port", scanner_serial_port, scanner_serial_port);
+    priv_nh->param("laserscan_frame", laserscan_frame, laserscan_frame);
 
     // Open serial port
     try
     {
-        ser.setPort(p_scanner_serial_port);
+        ser.setPort(scanner_serial_port);
         ser.setBaudrate(ARDUINO_SERIAL_BAUD_RATE);
         serial::Timeout to = serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(to);
@@ -125,15 +112,12 @@ void processInput()
         switch (p_scanner_mode)
         {
             case SCAN_MODE_2D_LASERSCAN:
-                ROS_ERROR("%s", line);
                 process2D(line);
                 break;
             case SCAN_MODE_2D_POINTCLOUD:
-                ROS_ERROR("%s", line);
                 process3D(line);
                 break;
             case SCAN_MODE_3D_POINTCLOUD:
-                ROS_ERROR("%s", line);
                 process3D(line);
                 break;
             case SCAN_MODE_CAM_DEPTHIMAGE:
@@ -218,28 +202,43 @@ void process2D(char *line)
     {
         if (laser_scan.ranges.size() > 0 && ros::ok())
         {
+            t_stop = ros::Time::now();
+            ROS_INFO_STREAM("Full-Scan period: " << t_stop-t_start);
+
+            // Fix data
             if (!laser_scan_direction)
             {
                 std::reverse(laser_scan.ranges.begin(), laser_scan.ranges.end());
                 std::reverse(laser_scan.intensities.begin(), laser_scan.intensities.end());
+            }
+            //laser_scan.scan_time = ros::Duration(t_stop-t_start);
+
+            // Publish data
+            if (!is_laser_pub_advertised)
+            {
+                laser_pub = nh->advertise<sensor_msgs::LaserScan>("scan", 2, true);
+                is_laser_pub_advertised = true;
             }
             laser_pub.publish(laser_scan);
         }
 
         laser_scan_direction = (line[1] == '+'); // scan direction for new laser data
 
+        // Create ROS message
         laser_scan.header.seq = laser_seq++;
         laser_scan.header.stamp = ros::Time::now();
-        laser_scan.header.frame_id = p_laserscan_frame;
+        laser_scan.header.frame_id = laserscan_frame;
         laser_scan.angle_min = p_stepper_horizontal_angle_per_step * p_stepper_step_min;
         laser_scan.angle_max = p_stepper_horizontal_angle_per_step * p_stepper_step_max;
         laser_scan.angle_increment = p_stepper_horizontal_angle_per_step * p_scanner_horizontal_steps_per_scan;
-        laser_scan.time_increment = 0;                                                              // TODO
-        laser_scan.scan_time = 0;                                                                   // TODO
+        laser_scan.time_increment = 0; // not usable since scan time varies among measurements
+        laser_scan.scan_time = 0; // will be updated
         laser_scan.range_min = p_laser_range_min;
         laser_scan.range_max = p_laser_range_max;
         laser_scan.ranges.clear();
         laser_scan.intensities.clear();
+
+        t_start = ros::Time::now();
     }
     else
     {
@@ -260,20 +259,25 @@ void process3D(char *line)
     {
         if (pc_scan.data.size() > 0 && ros::ok())
         {
+            t_stop = ros::Time::now();
+            ROS_INFO_STREAM("Full-Scan period: " << t_stop-t_start);
+
+            // Publish data
+            if (!is_pc_pub_advertised)
+            {
+                pc_pub = nh->advertise<sensor_msgs::PointCloud2>("vl53l1x_points", 2, true);
+                is_pc_pub_advertised = true;
+            }
             pc_pub.publish(pc_scan);
         }
 
+        // Create ROS message
         pc_scan.header.seq = pc_seq++;
         pc_scan.header.stamp = ros::Time::now();
-        pc_scan.header.frame_id = p_laserscan_frame;
-
-        // 2D structure of the point cloud. If the cloud is unordered, height is
-        // 1 and width is the length of the point cloud.
-        pc_scan.height = 1;
-        pc_scan.width = 0;
-
-        // Describes the channels and their layout in the binary data blob.
-        pc_scan.fields.clear();
+        pc_scan.header.frame_id = laserscan_frame;
+        pc_scan.height = 1; // 2D structure of the point cloud. If the cloud is unordered, height is
+        pc_scan.width = 0;  // 1 and width is the length of the point cloud.
+        pc_scan.fields.clear(); // Describes the channels and their layout in the binary data blob.
 
         std::string field_names[7] = {"x", "y", "z", "range_status", "intensity", "signal_rate", "ambient_rate"};
         for (int i=0; i<7; i++)
@@ -291,6 +295,8 @@ void process3D(char *line)
         pc_scan.row_step = pc_scan.fields.size() * sizeof(float);    // Length of a row in bytes
         pc_scan.data.clear();
         pc_scan.is_dense = false; // TODO: True if there are no invalid points
+
+        t_start = ros::Time::now();
     }
     else
     {

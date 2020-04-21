@@ -21,12 +21,12 @@
 
 
 // Data Type
-#ifdef __IT_IS_THE_COMPUTER__
+#ifdef __THIS_IS_THE_DRIVER__
     #define SHARED_INT_TYPE     int
     #define SHARED_LONG_TYPE    int
     #define SHARED_FLOAT_TYPE   double
 #endif
-#ifdef __IT_IS_THE_SCANNER__
+#ifdef __THIS_IS_THE_SCANNER__
     #define SHARED_INT_TYPE     int
     #define SHARED_LONG_TYPE    long
     #define SHARED_FLOAT_TYPE   float
@@ -61,13 +61,13 @@ SHARED_INT_TYPE   p_adaptive_resolution_enable                                  
 SHARED_FLOAT_TYPE p_adaptive_resolution_coef_0                                  = 0.05189296;
 SHARED_FLOAT_TYPE p_adaptive_resolution_coef_1                                  = -0.00166131;
 
-#ifdef __IT_IS_THE_COMPUTER__
+#ifdef __THIS_IS_THE_DRIVER__
     #define STR_PRINT(x) #x
     #define PROCESS_VARIABLE_INT(id, v) { priv_nh->param(#v, v, v); sprintf(write_buffer, "V %d %d\n", id, v); ser.write(write_buffer); ser.flush(); /*ROS_INFO(write_buffer);*/}
     #define PROCESS_VARIABLE_LONG(id, v) { priv_nh->param(#v, v, v); sprintf(write_buffer, "V %d %d\n", id, v); ser.write(write_buffer); ser.flush(); /*ROS_INFO(write_buffer);*/}
     #define PROCESS_VARIABLE_FLOAT(id, v) { priv_nh->param(#v, v, v); sprintf(write_buffer, "V %d %.8f\n", id, v); ser.write(write_buffer); ser.flush(); /*ROS_INFO(write_buffer);*/} // 
 #endif
-#ifdef __IT_IS_THE_SCANNER__
+#ifdef __THIS_IS_THE_SCANNER__
     #define PROCESS_VARIABLE_INT(tmp, v) {token = strtok(NULL, " "); v = atoi(token); Serial.print(F("#   ")); Serial.print(F(#v)); Serial.print(F(": ")); Serial.println(v);}
     #define PROCESS_VARIABLE_LONG(tmp, v) {token = strtok(NULL, " "); v = atol(token); Serial.print(F("#   ")); Serial.print(F(#v)); Serial.print(F(": ")); Serial.println(v);}
     #define PROCESS_VARIABLE_FLOAT(tmp, v) {token = strtok(NULL, " "); v = atof(token); Serial.print(F("#   ")); Serial.print(F(#v)); Serial.print(F(": ")); Serial.println(v, 8);}
