@@ -54,7 +54,6 @@ Actually, I have tried predicting orientation of the wall to guess the direction
 ## Notes
 
 - Stepper motor delay set as 2.25ms instead of 2ms, because it was missing steps.
-- Stepper motor phase set as 1 instead of 2, because torque was enough.
 - (TODO) 28BYJ-48 steps per revolution is 2048 instead of 2038.
 
 

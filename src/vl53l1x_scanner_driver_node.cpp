@@ -2,6 +2,7 @@
 #include <serial/serial.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/Image.h>
 #include <cstring>
 #include <vector>
 #include <algorithm>
@@ -20,6 +21,15 @@ union PC_DATA_t
     uint8_t raw[28];
 };
 
+union IMAGE_DATA_t
+{
+    struct
+    {
+        float r;
+    }structured;
+    uint8_t raw[4];
+};
+
 // Global Variables
 serial::Serial ser;
 char read_buffer[512];
@@ -28,8 +38,11 @@ ros::Publisher laser_pub;
 bool is_laser_pub_advertised = false;
 ros::Publisher pc_pub;
 bool is_pc_pub_advertised = false;
+ros::Publisher image_pub;
+bool is_image_pub_advertised = false;
 sensor_msgs::LaserScan laser_scan;
-sensor_msgs::PointCloud2 pc_scan; 
+sensor_msgs::PointCloud2 pc_scan;
+sensor_msgs::Image image_scan;
 bool laser_scan_direction;
 ros::NodeHandle *nh, *priv_nh;
 ros::Time t_start, t_stop;
@@ -46,6 +59,7 @@ void shutdownDevice();
 char* readLineFromDevice();
 void process2D(char *line);
 void process3D(char *line);
+void processDepth(char *line);
 void processInput();
 
 
@@ -109,24 +123,13 @@ void processInput()
     }
     else
     {
+        ROS_INFO(line);
         switch (p_scanner_mode)
         {
-            case SCAN_MODE_2D_LASERSCAN:
-                ROS_INFO(line);
-                process2D(line);
-                break;
-            case SCAN_MODE_2D_POINTCLOUD:
-                ROS_INFO(line);
-                process3D(line);
-                break;
-            case SCAN_MODE_3D_POINTCLOUD:
-                ROS_INFO(line);
-                process3D(line);
-                break;
-            case SCAN_MODE_CAM_DEPTHIMAGE:
-                ROS_INFO(line);
-                process3D(line); /*TODO*/
-                break;
+            case SCAN_MODE_2D_LASERSCAN:    process2D(line);    break;
+            case SCAN_MODE_2D_POINTCLOUD:   process3D(line);    break;
+            case SCAN_MODE_3D_POINTCLOUD:   process3D(line);    break;
+            case SCAN_MODE_CAM_DEPTHIMAGE:  processDepth(line); break;
         }
     }
 }
@@ -234,7 +237,7 @@ void process2D(char *line)
         laser_scan.header.frame_id = laserscan_frame;
         laser_scan.angle_min = p_stepper_horizontal_angle_per_step * p_stepper_step_min;
         laser_scan.angle_max = p_stepper_horizontal_angle_per_step * p_stepper_step_max;
-        laser_scan.angle_increment = p_stepper_horizontal_angle_per_step * p_scanner_horizontal_steps_per_scan;
+        laser_scan.angle_increment = p_stepper_horizontal_angle_per_step * p_scanner_horizontal_steps;
         laser_scan.time_increment = 0; // not usable since scan time varies among measurements
         laser_scan.scan_time = 0; // will be updated
         laser_scan.range_min = p_laser_range_min;
@@ -329,5 +332,57 @@ void process3D(char *line)
         }
 
          pc_scan.width++;
+    }
+}
+
+void processDepth(char *line)
+{
+    static int image_seq = 0;
+    if (line[0] == '$') // Publish old and construct new laser data
+    {
+        if (image_scan.data.size() > 0 && ros::ok())
+        {
+            t_stop = ros::Time::now();
+            ROS_WARN_STREAM("Full-Scan period: " << t_stop-t_start);
+
+            // Publish data
+            if (!is_image_pub_advertised)
+            {
+                image_pub = nh->advertise<sensor_msgs::Image>("/vl53l1x/image/depth", 2, true);
+                is_image_pub_advertised = true;
+            }
+            image_pub.publish(image_scan);
+        }
+
+        // Create ROS message
+        image_scan.header.seq = image_seq++;
+        image_scan.header.stamp = ros::Time::now();
+        image_scan.header.frame_id = laserscan_frame;
+
+        image_scan.height = 12/p_scanner_vertical_steps+1 ;
+        image_scan.width = 12/p_scanner_horizontal_steps+1;
+
+        image_scan.encoding = "32FC1";
+        image_scan.is_bigendian = false;
+        image_scan.step = image_scan.width * sizeof(float);
+        image_scan.data.clear();
+
+        t_start = ros::Time::now();
+    }
+    else
+    {
+        int horizontal_pos, vertical_pos, range, status;
+        float sig1, sig2;
+        sscanf(line, "%d %d %d %d %f %f", &horizontal_pos, &vertical_pos, &range, &status, &sig1, &sig2);
+
+        float r = ((float)range)/1000.0;
+
+        IMAGE_DATA_t image_data;
+        image_data.structured.r = r;
+
+        for (int i=0; i<sizeof(image_data.raw); i++)
+        {
+            image_scan.data.push_back(image_data.raw[i]);
+        }
     }
 }

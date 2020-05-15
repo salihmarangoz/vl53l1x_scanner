@@ -14,10 +14,12 @@
 #define LASER_DISTANCE_MODE_MEDIUM          (2)
 #define LASER_DISTANCE_MODE_LONG            (3)
 #define LASER_VERTICAL_POS_BIAS             (-6)
+#define LASER_HORIZONTAL_POS_BIAS           (-6)
 #define SCAN_MODE_2D_LASERSCAN              (1)
 #define SCAN_MODE_2D_POINTCLOUD             (2)
 #define SCAN_MODE_3D_POINTCLOUD             (3)
 #define SCAN_MODE_CAM_DEPTHIMAGE            (4)
+#define STEPPER_TWO_PHASE                   (HIGH) // true
 
 
 // Data Type
@@ -53,8 +55,8 @@ SHARED_FLOAT_TYPE p_laser_vertical_angle_per_roi_cell                           
 SHARED_LONG_TYPE  p_laser_measurement_timing_budget_micro_seconds               = 50000;
 SHARED_INT_TYPE   p_laser_inter_measurement_period_milli_seconds                = 50;
 SHARED_INT_TYPE   p_scanner_mode                                                = SCAN_MODE_2D_POINTCLOUD;
-SHARED_INT_TYPE   p_scanner_3d_vertical_steps_per_scan                          = 1;
-SHARED_INT_TYPE   p_scanner_horizontal_steps_per_scan                           = 32;
+SHARED_INT_TYPE   p_scanner_vertical_steps                                      = 1;
+SHARED_INT_TYPE   p_scanner_horizontal_steps                                    = 32;
 SHARED_INT_TYPE   p_scanner_rewind                                              = 1;
 SHARED_INT_TYPE   p_scanner_calibration_max_value                               = 500;
 SHARED_INT_TYPE   p_adaptive_resolution_enable                                  = 1;
@@ -92,8 +94,8 @@ SHARED_FLOAT_TYPE p_adaptive_resolution_coef_1                                  
       case 12: PROCESS_VARIABLE_LONG  (id, p_laser_measurement_timing_budget_micro_seconds); break;      \
       case 13: PROCESS_VARIABLE_INT   (id, p_laser_inter_measurement_period_milli_seconds);  break;      \
       case 14: PROCESS_VARIABLE_INT   (id, p_scanner_mode);                                  break;      \
-      case 15: PROCESS_VARIABLE_INT   (id, p_scanner_3d_vertical_steps_per_scan);            break;      \
-      case 16: PROCESS_VARIABLE_INT   (id, p_scanner_horizontal_steps_per_scan);             break;      \
+      case 15: PROCESS_VARIABLE_INT   (id, p_scanner_vertical_steps);                        break;      \
+      case 16: PROCESS_VARIABLE_INT   (id, p_scanner_horizontal_steps);                      break;      \
       case 17: PROCESS_VARIABLE_INT   (id, p_scanner_rewind);                                break;      \
       case 18: PROCESS_VARIABLE_INT   (id, p_scanner_calibration_max_value);                 break;      \
       case 19: PROCESS_VARIABLE_FLOAT (id, p_stepper_horizontal_angle_per_step);             break;      \

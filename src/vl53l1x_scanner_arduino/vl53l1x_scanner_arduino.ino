@@ -51,7 +51,7 @@ void actionState()
 {
     if (p_scanner_mode == SCAN_MODE_CAM_DEPTHIMAGE)
     {
-      Serial.print(F("$")); // FULL SCAN HEADER
+      Serial.println(F("$")); // FULL SCAN HEADER
     }
     // REWIND
     else if (p_scanner_rewind && stepper_pos >= p_stepper_step_max)
@@ -73,9 +73,9 @@ void actionState()
     else
     {
       // default:
-      desired_step = scanner_direction*p_scanner_horizontal_steps_per_scan;
+      desired_step = scanner_direction*p_scanner_horizontal_steps;
 
-      // adaptive resolution (compatible with SCAN_MODE_2D_POINTCLOUD)
+      // adaptive resolution (only compatible with SCAN_MODE_2D_POINTCLOUD)
       if (p_adaptive_resolution_enable && is_first_scan_received && p_scanner_mode == SCAN_MODE_2D_POINTCLOUD)
       {
         float distance = (float(rangingData.RangeMilliMeter)/1000.0);
@@ -117,7 +117,7 @@ void scan2D()
 
 void scan3D()
 {
-  for (int i=0; i<13; i+=p_scanner_3d_vertical_steps_per_scan)
+  for (int i=0; i<13; i+=p_scanner_vertical_steps)
   {
     measureDistance(stepper_pos, i+LASER_VERTICAL_POS_BIAS, true, p_laser_roi_topleftx, i+3, p_laser_roi_botrightx, i);
   }
@@ -125,11 +125,11 @@ void scan3D()
 
 void scanCamera()
 {
-  for (int i=0; i<13; i+=p_scanner_3d_vertical_steps_per_scan)
+  for (int i=12; i>=0; i-=p_scanner_vertical_steps)
   {
-    for (int j=0; j<13; j+=p_scanner_3d_vertical_steps_per_scan) // TODO!!!!!!
+    for (int j=12; j>=0; j-=p_scanner_horizontal_steps)
     {
-      measureDistance(j+LASER_VERTICAL_POS_BIAS, i+LASER_VERTICAL_POS_BIAS, true, j, i+3, j+3, i);
+      measureDistance(j+LASER_HORIZONTAL_POS_BIAS, i+LASER_VERTICAL_POS_BIAS, true, j, i+3, j+3, i); // hori, vert
     }
     
   }
@@ -347,17 +347,17 @@ void oneStep(bool dir, unsigned long delay_time){
       case 0:
       digitalWrite(p_stepper_pin_1, LOW);
       digitalWrite(p_stepper_pin_2, LOW);
-      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_3, STEPPER_TWO_PHASE);
       digitalWrite(p_stepper_pin_4, HIGH);
       break;
       case 1:
       digitalWrite(p_stepper_pin_1, LOW);
-      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_2, STEPPER_TWO_PHASE);
       digitalWrite(p_stepper_pin_3, HIGH);
       digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 2:
-      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_1, STEPPER_TWO_PHASE);
       digitalWrite(p_stepper_pin_2, HIGH);
       digitalWrite(p_stepper_pin_3, LOW);
       digitalWrite(p_stepper_pin_4, LOW);
@@ -366,7 +366,7 @@ void oneStep(bool dir, unsigned long delay_time){
       digitalWrite(p_stepper_pin_1, HIGH);
       digitalWrite(p_stepper_pin_2, LOW);
       digitalWrite(p_stepper_pin_3, LOW);
-      digitalWrite(p_stepper_pin_4, LOW);
+      digitalWrite(p_stepper_pin_4, STEPPER_TWO_PHASE);
     } 
   }
   else
@@ -378,24 +378,24 @@ void oneStep(bool dir, unsigned long delay_time){
       digitalWrite(p_stepper_pin_1, HIGH);
       digitalWrite(p_stepper_pin_2, LOW);
       digitalWrite(p_stepper_pin_3, LOW);
-      digitalWrite(p_stepper_pin_4, LOW);
+      digitalWrite(p_stepper_pin_4, STEPPER_TWO_PHASE);
       break;
       case 1:
-      digitalWrite(p_stepper_pin_1, LOW);
+      digitalWrite(p_stepper_pin_1, STEPPER_TWO_PHASE);
       digitalWrite(p_stepper_pin_2, HIGH);
       digitalWrite(p_stepper_pin_3, LOW);
       digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 2:
       digitalWrite(p_stepper_pin_1, LOW);
-      digitalWrite(p_stepper_pin_2, LOW);
+      digitalWrite(p_stepper_pin_2, STEPPER_TWO_PHASE);
       digitalWrite(p_stepper_pin_3, HIGH);
       digitalWrite(p_stepper_pin_4, LOW);
       break;
       case 3:
       digitalWrite(p_stepper_pin_1, LOW);
       digitalWrite(p_stepper_pin_2, LOW);
-      digitalWrite(p_stepper_pin_3, LOW);
+      digitalWrite(p_stepper_pin_3, STEPPER_TWO_PHASE);
       digitalWrite(p_stepper_pin_4, HIGH);
       break;
     } 

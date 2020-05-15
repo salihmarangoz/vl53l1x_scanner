@@ -6,7 +6,6 @@
         <!-- ===== [HARDWARE PARAMETERS] ===== -->
         <param name="p_scanner_serial_port" value="/dev/ttyACM0"/>
         <param name="p_stepper_horizontal_angle_per_step" value="0.003067962"/>
-        <param name="p_laser_vertical_angle_per_roi_cell" value="0.035"/>
         <param name="p_laser_range_min" value="0.04"/>
         <param name="p_laser_range_max" value="4.0"/>
 
@@ -19,18 +18,24 @@
         <param name="p_stepper_pin_3" value="11"/>
         <param name="p_stepper_pin_4" value="12"/>
         <param name="p_stepper_delay" value="2250"/>
-        <param name="p_stepper_step_min" value="-512"/>
-        <param name="p_stepper_step_max" value="+512"/>
+        <param name="p_stepper_step_min" value="-768"/>
+        <param name="p_stepper_step_max" value="+768"/>
         <param name="p_laser_roi_topleftx" value="6"/>
+        <param name="p_laser_roi_toplefty" value="15"/> <!-- TODO:long scan: 15 -->
         <param name="p_laser_roi_botrightx" value="9"/>
+        <param name="p_laser_roi_botrighty" value="0"/> <!-- TODO: long scan: 0 -->
         <param name="p_laser_distance_mode" value="3"/>
-        <param name="p_laser_measurement_timing_budget_micro_seconds" value="150000"/>
-        <param name="p_laser_inter_measurement_period_milli_seconds" value="150"/>
-        <param name="p_scanner_mode" value="3"/>
-        <param name="p_scanner_3d_vertical_steps_per_scan" value="1"/>
-        <param name="p_scanner_horizontal_steps_per_scan" value="8"/>
-        <param name="p_scanner_rewind" value="1"/>
+        <param name="p_laser_measurement_timing_budget_micro_seconds" value="100000"/>
+        <param name="p_laser_inter_measurement_period_milli_seconds" value="100"/>
+        <param name="p_scanner_mode" value="2"/>
+        <param name="p_scanner_horizontal_steps" value="16"/>
+        <param name="p_scanner_rewind" value="0"/>
         <param name="p_scanner_calibration_max_value" value="500"/>
+
+        <param name="p_adaptive_resolution_enable" value="1"/>
+        <param name="p_adaptive_resolution_coef_0" value="0.05189296"/>
+        <param name="p_adaptive_resolution_coef_1" value="-0.00166131"/>
+
 
     </node>
 </launch>

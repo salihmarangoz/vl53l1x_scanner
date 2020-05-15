@@ -27,16 +27,10 @@
         <param name="p_laser_distance_mode" value="3"/>
         <param name="p_laser_measurement_timing_budget_micro_seconds" value="100000"/>
         <param name="p_laser_inter_measurement_period_milli_seconds" value="100"/>
-        <param name="p_scanner_mode" value="2"/>
-        <param name="p_scanner_horizontal_steps_per_scan" value="16"/>
+        <param name="p_scanner_mode" value="1"/>
+        <param name="p_scanner_horizontal_steps" value="16"/>
         <param name="p_scanner_rewind" value="0"/>
         <param name="p_scanner_calibration_max_value" value="500"/>
-
-
-
-
-        <param name="p_adaptive_resolution_enable" value="1"/>
-
 
     </node>
 </launch>

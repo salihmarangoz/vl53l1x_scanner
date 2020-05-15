@@ -23,16 +23,21 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 - ROS Driver
 - 2D and 3D scanning mode (~1500 step in horizontal ~270 deg fov / 13 step in vertical ~27 deg fov)
 - Resets stepper motor position to 0 when the driver is terminated
-- (TODO) Depth camera mode
+- Depth camera mode
+- Stepper One Phase/Two Phase Mode
+- Adaptive Scanning
+  - Adaptive stepper resolution based on the measurement
+
+
+
 - (TODO) Fixes optical array center misalignment automatically [(See section 2.8)](https://www.st.com/resource/en/datasheet/vl53l1x.pdf)
 - (TODO) Adaptive parameters (Smart Measurement)
-  
+
   - Adaptive Signal Power
     - (TODO) Adaptive laser measurement timing (based on sig1, sig2, measurement)
     - (TODO) Adaptive RoI height (or width) (based on sig1, sig2 measurement)
-  
+
   - Adaptive Resolution
-    - (TODO) Adaptive stepper resolution based on measurement
     - (TODO) Adaptive measurement mode (based on sig1, sig2 , measurement)
     - (TODO) Sampling missing data caused by adaptive resolution
 - (TODO) Bag files
@@ -40,8 +45,7 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
   - fullscan based and/or single measurement based
   - dataset_X: measurements with fast parameters
   - dataset_Y: measurements with accurate parameters
-- (TODO) Stepper One Phase/Two Phase Mode
-- (TODO) Stepper Half Step Mode
+- ~~(TODO) Stepper Half Step Mode~~
 - (TODO) Laser data correction with odom from imu
 
 
@@ -136,8 +140,10 @@ $ ./calibrate.sh /dev/ttyACM0 +100
 $ source ~/catkin_ws/devel/setup.bash
 
 # TO START THE DRIVER SELECT ONE:
-$ roslaunch vl53l1x_scanner start_2d.launch
-$ roslaunch vl53l1x_scanner start_3d.launch
+$ roslaunch vl53l1x_scanner start_2d_laserscan.launch
+$ roslaunch vl53l1x_scanner start_2d_pointcloud.launch # <- preffered
+$ roslaunch vl53l1x_scanner start_3d_pointcloud.launch
+$ roslaunch vl53l1x_scanner start_depth_camera.launch
 
 # OR;
 
