@@ -2,7 +2,7 @@
 
 # VL53L1X Scanner Code Documentation
 
-
+UNDER CONSTRUCTION!
 
 ### 1. Adaptive Scan Resolution
 
@@ -37,26 +37,6 @@ Optimizes angle between scans based on the previous single measurement.
 
 Actually, I have tried predicting orientation of the wall to guess the direction of next measurement, but it failed. To explain it, firstly, rapid changes in the measurements caused fluctuations in guessed orientation of walls. Secondly, I have solved this issue with applying exponentially weighted averages on to the guess of wall orientation, but this caused overshoot at the end of walls. As a result, I have quit working with orientation predictions and came with this idea which is simpler and faster.
 
-**TODO:**
-
-```c
-//float coef[2] = {0.03036822, -0.00032111}; // 3cm
-//float coef[2] = {1.00130428e-02, -1.13428036e-05}; // 1cm
-float coef[2] = {0.05189296, -0.00166131}; // 5cm
-float distance = (float(last_scan_range_millimeter)/1000.0);
-float adaptive_angle = (1.0/distance)*coef[0] + coef[1];
-float step_per_angle = 325.949278381;
-float target_step = adaptive_angle * step_per_angle;
-if (abs(int(target_step)) <= 0)
-  target_step = 1;
-target_step = abs(int(target_step)) * scanner_direction;
-stepperStep(target_step, stepper_delay);
-//stepperStep(scanner_direction*scanner_horizontal_steps_per_scan, stepper_delay);
-scan();
-Serial.print("# target_step ");
-Serial.println(target_step);
-```
-
 
 
 ## 2. PointCloud Calculation
@@ -69,10 +49,11 @@ Serial.println(target_step);
 
 
 
+--------------------------------------------------------------------------
+
 ## Notes
 
 - Stepper motor delay set as 2.25ms instead of 2ms, because it was missing steps.
-- Stepper motor phase set as 1 instead of 2, because torque was enough.
 - (TODO) 28BYJ-48 steps per revolution is 2048 instead of 2038.
 
 
