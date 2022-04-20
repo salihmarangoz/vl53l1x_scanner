@@ -1,6 +1,6 @@
-# VL53L1X Scanner (UNDER CONSTRUCTION!)
+# VL53L1X Scanner (Abandoned Project)
 
-   * [VL53L1X Scanner (UNDER CONSTRUCTION!)](#vl53l1x-scanner-under-construction)
+   * [VL53L1X Scanner (Abandoned Project)](#vl53l1x-scanner-abandoned-project)
       * [1. Introduction](#1-introduction)
       * [2. Making the Scanner](#2-making-the-scanner)
       * [3. Installing the Software](#3-installing-the-software)
@@ -8,13 +8,10 @@
       * [5. Notes](#5-notes)
       * [6. References](#6-references)
 
-## Support me on Patreon
-
-[![Become a Patron!](https://i.imgur.com/BbE01dL.png)](https://www.patreon.com/bePatron?u=33807246)
-
-
 
 ## 1. Introduction
+
+**Note:** This project is abandoned. The code works well but the hardware selection is poor. Single VL53L1X is too slow and stepper motor has problems. Althought, the code can be used as a reference.
 
 This is my DIY laser scanner project that I designed in quarantine days of covid-19.  I aim to demonstrate the capabilities of VL53L1X range finder sensor and design a 2D/3D scanner and depth camera.
 
@@ -27,28 +24,6 @@ This is my DIY laser scanner project that I designed in quarantine days of covid
 - Stepper One Phase/Two Phase Mode
 - Adaptive Scanning
   - Adaptive stepper resolution based on the measurement
-
-
-
-- (TODO) Fixes optical array center misalignment automatically [(See section 2.8)](https://www.st.com/resource/en/datasheet/vl53l1x.pdf)
-- (TODO) Adaptive parameters (Smart Measurement)
-
-  - Adaptive Signal Power
-    - (TODO) Adaptive laser measurement timing (based on sig1, sig2, measurement)
-    - (TODO) Adaptive RoI height (or width) (based on sig1, sig2 measurement)
-
-  - Adaptive Resolution
-    - (TODO) Adaptive measurement mode (based on sig1, sig2 , measurement)
-    - (TODO) Sampling missing data caused by adaptive resolution
-- (TODO) Bag files
-- (TODO FOR ANOTHER PROJECT) Deep Learning based scan noise reduction
-  - fullscan based and/or single measurement based
-  - dataset_X: measurements with fast parameters
-  - dataset_Y: measurements with accurate parameters
-- ~~(TODO) Stepper Half Step Mode~~
-- (TODO) Laser data correction with odom from imu
-
-
 
 ## 2. Making the Scanner
 
